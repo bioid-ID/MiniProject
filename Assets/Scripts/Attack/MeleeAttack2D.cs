@@ -1,13 +1,13 @@
 using UnityEngine;
 
-public class MeleeAttack : AttackBase
+public class MeleeAttack2D : AttackBase
 {
-    [Header("Melee Settings")]
-    [SerializeField] private Hitbox meleeHitbox;
+    [Header("2D 근접 공격 설정")]
+    [SerializeField] private Hitbox2D meleeHitbox;
 
     private void Awake()
     {
-        if(meleeHitbox != null) 
+        if (meleeHitbox != null)
             meleeHitbox.gameObject.SetActive(false);
     }
 
@@ -17,7 +17,7 @@ public class MeleeAttack : AttackBase
         {
             meleeHitbox.Initialize(damage);
             meleeHitbox.gameObject.SetActive(true);
-            Invoke(nameof(DisableHitbox), 0.3f);
+            Invoke(nameof(DisableHitbox), 0.2f);
         }
     }
 

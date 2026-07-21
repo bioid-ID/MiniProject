@@ -13,7 +13,7 @@ public class ProjectileAttack : AttackBase
 
         GameObject projGo = Instantiate(projectilePrefab, spawnPoint.position, spawnPoint.rotation);
 
-        Projectile projectile = projGo.GetComponent<Projectile>();
+        Projectile2D projectile = projGo.GetComponent<Projectile2D>();
         if(projectile != null)
         {
             projectile.Launch(damage);
