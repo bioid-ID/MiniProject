@@ -17,29 +17,91 @@ public class PlayerStat : MonoBehaviour
     [SerializeField] private int baseInt = 10;
     [SerializeField] private int baseLuck = 10;
 
-    [Header("Bonus Stats (Equipment)")]
-    public int bonusStr;
-    public int bonusDex;
-    public int bonusInt;
-    public int bonusLuck;
-    public float equipmentAtk; // 장착 무기 공격력
-    public float equipmentDef; // 장착 방어구 방어력
+    [Header("Current Equipped Weapon")]
+    // 현재 장착 중인 무기 데이터 (무기가 바뀔 때마다 이 슬롯에 할당)
+    public WeaponData equippedWeapon;
 
-    // 합산 스탯 프로퍼티
-    public int TotalStr => baseStr + bonusStr;
-    public int TotalDex => baseDex + bonusDex;
-    public int TotalInt => baseInt + bonusInt;
-    public int TotalLuck => baseLuck + bonusLuck;
+    // --- 종합 스탯 계산 (캐릭터 순수 베이스 스탯 + 장착 장비의 보너스 스탯) ---
+    public int TotalStr => baseStr;
+    public int TotalDex => baseDex;
+    public int TotalInt => baseInt;
+    public int TotalLuck => baseLuck + (equippedWeapon != null ? equippedWeapon.bonusLuck : 0); // 장비의 운 보정 반영
 
-    // --- 기획서 반영 실시간 최종 스탯 계산 ---
+    // --- 기획서 반영: 실시간 최종 전투 능력치 연산 속성 (Properties) ---
     public int Level => level;
-    public float MaxHealth => 100f + (level * 25f) + (TotalStr * 15f); // STR 반영 체력
-    public float MaxMana => 50f + (level * 10f) + (TotalInt * 20f);   // INT 반영 마나
-    public float Defense => equipmentDef + (TotalStr * 0.5f);         // 방어력
-    public float MoveSpeed => 5.0f + (TotalDex / 25f * 0.1f);         // DEX 반영 이속
 
-    // 확률 스탯 (%)
-    public float CriticalChance => 5.0f + (TotalLuck * 0.5f);
+    // 최종 최대 체력 = 기본 체력 성장 + STR 보너스 + [장비 고유 체력 증가량]
+    public float MaxHealth
+    {
+        get
+        {
+            float weaponHpMod = (equippedWeapon != null) ? equippedWeapon.bonusMaxHealth : 0f;
+            return 100f + (level * 25f) + (TotalStr * 15f) + weaponHpMod;
+        }
+    }
+
+    // 최종 최대 마나 = 기본 마나 성장 + INT 보너스 + [장비 고유 마나 증가량]
+    public float MaxMana
+    {
+        get
+        {
+            float weaponMpMod = (equippedWeapon != null) ? equippedWeapon.bonusMaxMana : 0f;
+            return 50f + (level * 10f) + (TotalInt * 20f) + weaponMpMod;
+        }
+    }
+
+    // 최종 사거리 = 무기 기본 사거리 + [장비 추가 사거리 보정값]
+    public float AttackRange
+    {
+        get
+        {
+            if (equippedWeapon == null) return 1.5f; // 맨손 사거리
+            return equippedWeapon.attackRange + equippedWeapon.bonusRange;
+        }
+    }
+
+    // 최종 공격 속도 = 무기 기본 공속 + [장비 추가 공속 보정값]
+    public float AttackSpeed
+    {
+        get
+        {
+            float weaponAsMod = (equippedWeapon != null) ? equippedWeapon.bonusAttackSpeed : 0f;
+            float baseAs = (equippedWeapon != null) ? equippedWeapon.attackSpeed : 1.0f;
+            return Mathf.Max(0.1f, baseAs + weaponAsMod); // 공속이 0 이하로 떨어지는 것 방지
+        }
+    }
+
+    // 최종 이동 속도 = 캐릭터 기본(5.0) + DEX 보너스 + [장비 고유 이속 보정값]
+    public float MoveSpeed
+    {
+        get
+        {
+            float weaponSpeedMod = (equippedWeapon != null) ? equippedWeapon.bonusMoveSpeed : 0f;
+            return 5.0f + (TotalDex / 25f * 0.1f) + weaponSpeedMod;
+        }
+    }
+
+    // 최종 치명타 확률 = 기본(5%) + LUCK 보너스 + [장비 고유 치명타 보정값]
+    public float CriticalChance
+    {
+        get
+        {
+            float weaponCritMod = (equippedWeapon != null) ? equippedWeapon.bonusCritChance : 0f;
+            return 5.0f + (TotalLuck * 0.5f) + weaponCritMod;
+        }
+    }
+
+    // 현재 장착된 무기 기준 '실시간 최종 공격 데미지' 계산 반환
+    public float AttackDamage
+    {
+        get
+        {
+            if (equippedWeapon == null) return 10f; // 맨손 데미지 기본값
+            return equippedWeapon.CalculateFinalWeaponDamage(this);
+        }
+    }
+
+    // 추가 스탯 목록 (회피, 명중, 드랍율)
     public float DodgeChance => (TotalDex * 0.4f) + (TotalLuck * 0.2f);
     public float Accuracy => 90f + (TotalDex * 0.8f);
     public float DropRateMultiplier => 1.0f + (TotalLuck * 0.003f);
@@ -50,7 +112,6 @@ public class PlayerStat : MonoBehaviour
     public void AddExp(int amount)
     {
         currentExp += amount;
-        // 요구 경험치량이 꽉 차면 반복 레벨업 가능하도록 while문 권장
         while (currentExp >= maxExp)
         {
             LevelUp();
@@ -61,15 +122,11 @@ public class PlayerStat : MonoBehaviour
     {
         currentExp -= maxExp;
         level++;
-
-        // 기존 경험치 상승 공식 유지
         maxExp = Mathf.RoundToInt(maxExp * 1.2f);
 
-        // 레벨업 보상 포인트 지급 (기획서 내용 반영)
         statPoints += 5;
         passivePoints += 1;
 
-        // 기존에 작성해두신 PlayerManager를 통한 풀피 회복 로직 유지
         if (PlayerManager.Instance != null && PlayerManager.Instance.Health != null)
         {
             PlayerManager.Instance.Health.Heal(MaxHealth);
@@ -78,7 +135,7 @@ public class PlayerStat : MonoBehaviour
         Debug.Log($"Level Up! 현재 레벨: {level}, 스탯 포인트: {statPoints}");
     }
 
-    // UI에서 스탯 올릴 때 사용할 함수
+    // 스탯 투자 시스템
     public bool InvestStat(string statName)
     {
         if (statPoints <= 0) return false;
