@@ -1,7 +1,7 @@
 using UnityEditor.SearchService;
 using UnityEngine;
 
-public class ProjectileAttack : AttackBase
+public class ProjectileAttack2D : AttackBase
 {
     [Header("Projectile Settings")]
     [SerializeField] private GameObject projectilePrefab;
