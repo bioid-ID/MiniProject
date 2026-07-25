@@ -197,5 +197,14 @@ public class PlayerStat : MonoBehaviour
         currentHp = Mathf.Min(currentHp, MaxHp);
         currentMp = Mathf.Min(currentMp, MaxMp);
     }
+    public AttackType CurrentAttackType
+    {
+        get
+        {
+            if (weaponSlot == null)
+                return AttackType.Melee;
 
+            return weaponSlot.AttackType;
+        }
+    }
 }

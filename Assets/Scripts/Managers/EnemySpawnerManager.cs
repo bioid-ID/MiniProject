@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-public class EnemySpawner : MonoBehaviour
+public class EnemySpawnerManager : MonoBehaviour
 {
     public GameObject monsterPrefab;
     public Transform[] spawnPoints;

@@ -1,43 +1,34 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [Header("Prefab Settings")]
-    [SerializeField] private GameObject projectilePrefab; 
-    [SerializeField] private Transform firePoint;      
+    [SerializeField] private ProjectileAttack2D projectileAttack;
+    [SerializeField] private MeleeAttack2D meleeAttack;
 
-    private float attackCooldown = 0f;
-    private bool isAttackPressed = false;
+    private PlayerStat stat;
 
-    private void Update()
+    private void Awake()
     {
-        if (attackCooldown > 0f)
-        {
-            attackCooldown -= Time.deltaTime;
-        }
-        if (isAttackPressed && attackCooldown <= 0f)
-        {
-            Fire();
-        }
-    }
-    public void OnAttack(InputValue value)
-    {
-        isAttackPressed = value.isPressed;
+        stat = GetComponent<PlayerStat>();
+
+        if (projectileAttack == null)
+            projectileAttack = GetComponent<ProjectileAttack2D>();
+
+        if (meleeAttack == null)
+            meleeAttack = GetComponent<MeleeAttack2D>();
     }
 
-    private void Fire()
+    public void NormalAttack()
     {
-        if (projectilePrefab == null || firePoint == null)
-        {
-            Debug.LogWarning("지정되지 않았습니다.");
-            return;
-        }
-        Instantiate(projectilePrefab, firePoint.position, firePoint.rotation);
+        if (stat == null) return;
 
-        if (PlayerManager.Instance.Stat != null)
+        if (stat.AttackType == AttackType.Melee)
         {
-            attackCooldown = 1f / PlayerManager.Instance.Stat.AttackSpeed;
+            meleeAttack.Attack();
+        }
+        else
+        {
+            projectileAttack.Attack();
         }
     }
 }

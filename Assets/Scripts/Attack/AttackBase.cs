@@ -2,14 +2,26 @@ using UnityEngine;
 
 public abstract class AttackBase : MonoBehaviour
 {
-    [Header("기본 공격 설정")]
-    [SerializeField] protected float damage = 10f;
-    [SerializeField] protected LayerMask targetLayer;
+    [SerializeField] protected float damage;
+    [SerializeField] protected float cooldown;
 
-    public abstract void ExecuteAttack();
+    protected float currentCooldown;
 
-    public virtual void ExecuteAttackWithModifier(float damageModifier)
+    protected virtual void Update()
     {
-        ExecuteAttack();
+        if (currentCooldown > 0)
+            currentCooldown -= Time.deltaTime;
     }
+
+    public bool CanAttack()
+    {
+        return currentCooldown <= 0f;
+    }
+
+    protected void ResetCooldown()
+    {
+        currentCooldown = cooldown;
+    }
+
+    public abstract void Attack();
 }
