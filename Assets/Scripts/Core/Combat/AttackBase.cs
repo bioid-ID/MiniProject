@@ -2,14 +2,17 @@ using UnityEngine;
 
 public abstract class AttackBase : MonoBehaviour
 {
-    [SerializeField] protected float damage;
-    [SerializeField] protected float cooldown;
+    [SerializeField] protected float cooldown = 1f;
 
     protected float currentCooldown;
 
+    protected virtual void Awake()
+    {
+    }
+
     protected virtual void Update()
     {
-        if (currentCooldown > 0)
+        if (currentCooldown > 0f)
             currentCooldown -= Time.deltaTime;
     }
 
@@ -23,5 +26,5 @@ public abstract class AttackBase : MonoBehaviour
         currentCooldown = cooldown;
     }
 
-    public abstract void Attack();
+    public abstract void Attack(float finalDamage);
 }

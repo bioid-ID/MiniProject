@@ -44,22 +44,12 @@ public class PlayerStat : MonoBehaviour
     public float CurrentHp => currentHp;
     public float CurrentMp => currentMp;
 
-    private IEnumerable<EquipmentData> EquippedItems
-    {
-        get
-        {
-            if (weaponSlot != null) yield return weaponSlot;
-            if (subWeaponSlot != null) yield return subWeaponSlot;
-            if (helmetSlot != null) yield return helmetSlot;
-            if (armorSlot != null) yield return armorSlot;
-            if (pantsSlot != null) yield return pantsSlot;
-            if (glovesSlot != null) yield return glovesSlot;
-            if (bootsSlot != null) yield return bootsSlot;
-            if (necklaceSlot != null) yield return necklaceSlot;
-            if (ringSlot1 != null) yield return ringSlot1;
-            if (ringSlot2 != null) yield return ringSlot2;
-        }
-    }
+    private EquipmentData[] EquippedItems => new EquipmentData[]
+{
+    weaponSlot, subWeaponSlot, helmetSlot,
+    armorSlot, pantsSlot, glovesSlot,
+    bootsSlot, necklaceSlot, ringSlot1, ringSlot2
+};
 
     public int TotalStr => baseStr + SumInt(item => item.bonusStr);
     public int TotalDex => baseDex + SumInt(item => item.bonusDex);
@@ -70,8 +60,7 @@ public class PlayerStat : MonoBehaviour
     public float MaxMp => 50f + (currentLevel * 10f) + (TotalInt * 20f) + SumFloat(item => item.bonusMaxMana);
     public float Defense => (TotalStr * 0.5f) + SumFloat(item => item.bonusDefense);
 
-    // 이제 타입이 PlayerStat으로 일치하므로 정상 작동합니다.
-    public float AttackDamage => weaponSlot == null ? 10f : weaponSlot.CalculateFinalWeaponDamage(this);
+    public float AttackDamage => weaponSlot == null ? 10f : weaponSlot.CalculateWeaponDamage(this);
     public float AttackRange => (weaponSlot == null ? 1.5f : weaponSlot.attackRange) + SumFloat(item => item.bonusRange);
     public float AttackSpeed => Mathf.Max(0.1f, (weaponSlot == null ? 1.0f : weaponSlot.attackSpeed) + SumFloat(item => item.bonusAttackSpeed));
     public float MoveSpeed => 5.0f + (TotalDex / 25f * 0.1f) + SumFloat(item => item.bonusMoveSpeed);
@@ -108,14 +97,30 @@ public class PlayerStat : MonoBehaviour
     private int SumInt(Func<EquipmentData, int> selector)
     {
         int total = 0;
-        foreach (var item in EquippedItems) total += selector(item);
+
+        foreach (var item in EquippedItems)
+        {
+            if (item == null)
+                continue;
+
+            total += selector(item);
+        }
+
         return total;
     }
 
     private float SumFloat(Func<EquipmentData, float> selector)
     {
         float total = 0;
-        foreach (var item in EquippedItems) total += selector(item);
+
+        foreach (var item in EquippedItems)
+        {
+            if (item == null)
+                continue;
+
+            total += selector(item);
+        }
+
         return total;
     }
 

@@ -2,33 +2,46 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [SerializeField] private ProjectileAttack2D projectileAttack;
-    [SerializeField] private MeleeAttack2D meleeAttack;
+    [Header("Attack Components")]
+    [SerializeField] private MeleeAttack meleeAttack;
+    [SerializeField] private ProjectileAttack projectileAttack;
 
     private PlayerStat stat;
 
     private void Awake()
     {
-        stat = GetComponent<PlayerStat>();
-
-        if (projectileAttack == null)
-            projectileAttack = GetComponent<ProjectileAttack2D>();
+        stat = PlayerStat.Instance;
 
         if (meleeAttack == null)
-            meleeAttack = GetComponent<MeleeAttack2D>();
+            meleeAttack = GetComponent<MeleeAttack>();
+
+        if (projectileAttack == null)
+            projectileAttack = GetComponent<ProjectileAttack>();
     }
 
     public void NormalAttack()
     {
-        if (stat == null) return;
+        if (stat == null)
+            return;
 
-        if (stat.AttackType == AttackType.Melee)
+        float damage = stat.AttackDamage;
+        EquipmentData weapon = stat.weaponSlot;
+
+        if (weapon == null)
         {
-            meleeAttack.Attack();
+            meleeAttack?.Attack(damage);
+            return;
         }
-        else
+
+        switch (weapon.AttackType)
         {
-            projectileAttack.Attack();
+            case AttackType.Melee:
+                meleeAttack?.Attack(damage);
+                break;
+
+            case AttackType.Projectile:
+                projectileAttack?.Attack(damage);
+                break;
         }
     }
 }

@@ -2,59 +2,174 @@ using UnityEngine;
 
 public enum EquipmentSlot
 {
-    Weapon, SubWeapon, Helmet, Armor, Pants, Gloves, Boots, Necklace, Ring1, Ring2
+    Weapon, SubWeapon, Helmet,
+    Armor, Pants, Gloves,
+    Boots,  Necklace, Ring1,  Ring2
 }
 
-[CreateAssetMenu(fileName = "NewEquipment", menuName = "ScriptableObjects/ExpandedEquipment")]
-public class EquipmentData : ScriptableObject
+public enum WeaponType
 {
-    [Header("[ Equipment Identity ]")]
+    Melee, Ranged, Magic, Throwable, Whip
+}
+public enum EquipmentGrade
+{
+    Normal, Magic, Rare, Epic,
+    Unique, Legendary, Mythic
+}
+
+public enum AttackType
+{
+    Melee, Projectile
+}
+
+public enum EquipmentSet
+{
+    None,  RedKnight, Assassin, Wizard, 
+    Hunter, Dragon, Demon, Angel
+}
+
+public abstract class EquipmentData : ScriptableObject
+{
+
+    [Header("Info")]
+
     public string equipmentName;
+
+    public Sprite icon;
+
+    [TextArea]
+    public string description;
+
     public EquipmentSlot slotType;
+
+    public EquipmentGrade grade;
+
     public int requiredLevel = 1;
 
-    [Header("[ 무기 고유 능력치 (무기 슬롯인 경우만 사용) ]")]
+    public int sellPrice = 100;
+
+    [Header("Weapon")]
+
     public WeaponType weaponType;
-    public float weaponAtk = 20f;
-    public float attackRange = 2f;
-    public float attackSpeed = 1f;
 
-    [Tooltip("무기 고유 관통 횟수 (0이면 관통 불가, 1이면 1명 관통 후 2명째에서 소멸)")]
-    public int basePiercingCount = 0;
+    public float weaponAtk = 20;
 
-    [Tooltip("무기 고유 관통 시 데미지 감쇠율 (0.2면 관통할 때마다 데미지 20%씩 감소)")]
-    [Range(0f, 1f)] public float baseDamageDecay = 0.2f;
+    public float attackSpeed = 1;
 
-    [Header("[ 1. 핵심 스탯 보정 ]")]
-    public int bonusStr = 0; public int bonusDex = 0; public int bonusInt = 0; public int bonusLuck = 0;
+    public float attackRange = 2;
 
-    [Header("[ 2. 전투 능력치 보정 ]")]
-    public float bonusMaxHealth = 0f; public float bonusMaxMana = 0f; public float bonusDefense = 0f;
-    public float bonusMoveSpeed = 0f; public float bonusAttackSpeed = 0f; public float bonusRange = 0f;
+    public float projectileSpeed = 12;
 
-    [Header("[ 3. 관통 및 확률 스탯 보정 (New!) ]")]
-    [Tooltip("장비로 추가되는 관통 횟수 (예: 관통의 화살통 +1)")]
-    public int bonusPiercing = 0;
+    public int basePiercingCount;
 
-    [Tooltip("관통 데미지 감쇠 완화 수치 (예: 0.05면 관통 대미지 깎이는 폭을 5% 줄여줌)")]
-    public float bonusDecayReduction = 0f;
+    [Range(0f, 1f)]
+    public float baseDamageDecay = 0.2f;
 
-    public float bonusCritChance = 0f;
-    public float bonusDodgeChance = 0f;
-    public float bonusDropRate = 0f;
+    public float knockBack;
 
-    [Header("[ 4. 데미지 반영 계수 ]")]
-    [Range(0f, 3f)] public float strCoefficient = 1.0f;
-    [Range(0f, 3f)] public float dexCoefficient = 0.0f;
-    [Range(0f, 3f)] public float intCoefficient = 0.0f;
-    [Range(0f, 3f)] public float luckCoefficient = 0.0f;
+    public float criticalMultiplier = 1.5f;
 
-    public float CalculateFinalWeaponDamage(PlayerStat playerStat)
+    [Header("Base Stat")]
+
+    public int bonusStr;
+
+    public int bonusDex;
+
+    public int bonusInt;
+
+    public int bonusLuck;
+
+    [Header("Combat")]
+
+    public float bonusMaxHealth;
+
+    public float bonusMaxMana;
+
+    public float bonusDefense;
+
+    public float bonusMoveSpeed;
+
+    public float bonusAttackSpeed;
+
+    public float bonusRange;
+
+    public float bonusCritChance;
+
+    public float bonusCritDamage;
+
+    public float bonusDodgeChance;
+
+    public float bonusAccuracy;
+
+    public float bonusDropRate;
+
+    public float bonusCooldownReduction;
+
+    [Header("Special")]
+
+    public int bonusProjectile;
+
+    public int bonusPiercing;
+
+    public float bonusDecayReduction;
+
+    public float bonusLifeSteal;
+
+    public float bonusReflect;
+
+    public float bonusBurnChance;
+
+    public float bonusFreezeChance;
+
+    public float bonusPoisonChance;
+
+    public float bonusShockChance;
+
+    [Header("Scaling")]
+
+    [Range(0, 3)]
+    public float strCoefficient = 1;
+
+    [Range(0, 3)]
+    public float dexCoefficient;
+
+    [Range(0, 3)]
+    public float intCoefficient;
+
+    [Range(0, 3)]
+    public float luckCoefficient;
+
+
+    public AttackType AttackType
     {
-        float scalingDmg = (playerStat.TotalStr * strCoefficient) +
-                            (playerStat.TotalDex * dexCoefficient) +
-                            (playerStat.TotalInt * intCoefficient) +
-                            (playerStat.TotalLuck * luckCoefficient);
-        return weaponAtk + scalingDmg;
+        get
+        {
+            switch (weaponType)
+            {
+                case WeaponType.Melee:
+                case WeaponType.Whip:
+                    return AttackType.Melee;
+
+                case WeaponType.Ranged:
+                case WeaponType.Magic:
+                case WeaponType.Throwable:
+                    return AttackType.Projectile;
+
+                default:
+                    return AttackType.Melee;
+            }
+        }
+    }
+
+    public float CalculateWeaponDamage(PlayerStat stat)
+    {
+        if (stat == null)
+            return weaponAtk;
+
+        return weaponAtk +
+               stat.TotalStr * strCoefficient +
+               stat.TotalDex * dexCoefficient +
+               stat.TotalInt * intCoefficient +
+               stat.TotalLuck * luckCoefficient;
     }
 }
