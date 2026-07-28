@@ -5,7 +5,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
 {
     [Header("Health Settings")]
     private float currentHealth;
-
+    private int maxHp;
     [Header("Invincible Settings")]
     [SerializeField] private float invincibleDuration = 0.5f; 
     private bool isInvincible = false;
@@ -20,11 +20,11 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(float damage)
+    public void TakeDamage(DamageInfo damageInfo)
     {
         if (isInvincible || currentHealth <= 0) return;
 
-        currentHealth -= damage;
+        currentHealth -= (int)damageInfo.Damage;
         Debug.Log($"Ã¼·Â: {currentHealth}");
 
         if (currentHealth <= 0)

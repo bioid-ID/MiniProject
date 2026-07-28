@@ -15,4 +15,19 @@ public class EnemyData : ScriptableObject
     public float hpGrowthRate = 0.2f;      
     public float attackGrowthRate = 0.12f;  
     public float defenseGrowthRate = 0.15f;
+    [Header("Movement")]
+    public float moveSpeed = 3f;
+
+    [Header("AI")]
+    public float detectRange = 8f;
+    public float attackRange = 1.5f;
+    public AttackType attackType;
+
+    [Header("Attack")]
+
+    public float attackCooldown = 1f;
+
+    public int projectilePiercing;
+
+    public float projectileDecay;
 }

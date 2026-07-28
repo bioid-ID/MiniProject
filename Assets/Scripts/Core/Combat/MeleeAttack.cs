@@ -9,19 +9,19 @@ public class MeleeAttack : AttackBase
 
     private Coroutine attackCoroutine;
 
-    private void Awake()
+    protected override void Awake()
     {
+
+        base.Awake();
+
         if (meleeHitbox != null)
             meleeHitbox.gameObject.SetActive(false);
     }
 
     public override void Attack(float finalDamage)
     {
-        if (!CanAttack())
-            return;
-
-        if (meleeHitbox == null)
-            return;
+        if (!CanAttack()) return;
+        if (meleeHitbox == null) return;
 
         ResetCooldown();
 
@@ -41,13 +41,11 @@ public class MeleeAttack : AttackBase
     private IEnumerator AttackSequence(DamageInfo damageInfo)
     {
         meleeHitbox.Initialize(damageInfo);
-
         meleeHitbox.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(attackDuration);
 
         meleeHitbox.gameObject.SetActive(false);
-
         attackCoroutine = null;
     }
 

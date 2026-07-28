@@ -33,15 +33,28 @@ public class PlayerManager : MonoBehaviour
     {
         Debug.Log("Success");
     }
-
     public void TargetTakeDamage(float amount)
     {
-        if(Health != null) 
+        if (Health != null)
         {
-            Health.TakeDamage(amount);
+            DamageInfo simpleDamage = new DamageInfo(
+                attacker: null,                 // 공격자 없음 (환경 요소 등)
+                damage: amount,                 // 전달받은 대미지 수치
+                damageType: DamageType.Physical,// 기본 물리 대미지 타입
+                team: TeamType.Enemy            // 적 진영으로부터 받는 대미지 처리
+            );
+
+            Health.TakeDamage(simpleDamage);
         }
     }
-
+    public void TargetTakeDamage(DamageInfo damageInfo)
+    {
+        if (Health != null)
+        {
+            Health.TakeDamage(damageInfo);
+        }
+    }
 }
+
 
 

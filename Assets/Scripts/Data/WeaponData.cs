@@ -5,13 +5,13 @@ public class WeaponData : EquipmentData
 {
     [Header("Weapon")]
 
-    public WeaponType weaponType;
+    public new WeaponType weaponType;
 
     public float attackDamage = 20;
 
-    public float attackRange = 2;
+    public new float attackRange = 2;
 
-    public float attackSpeed = 1;
+    public new float attackSpeed = 1;
 
     public int piercingCount;
 

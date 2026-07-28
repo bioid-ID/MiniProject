@@ -4,7 +4,6 @@ using UnityEngine;
 public class EnemyHealth : MonoBehaviour, IDamageable
 {
     private Enemy enemy;
-
     private float currentHp;
 
     private void Awake()
@@ -34,7 +33,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        // ³ªÁß¿¡ PoolManager.Return(gameObject); EnemyPool.Return(enemy);
-        Destroy(gameObject);
+        EnemySpawnerManager.Instance.OnMonsterKilled(transform.position);
+
+        enemy.Kill();
     }
 }

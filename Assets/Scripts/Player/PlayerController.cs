@@ -9,20 +9,29 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private LayerMask enemyLayer;
 
     private Rigidbody2D rb;
+    private PlayerMovement playerMovement; 
     private Camera mainCamera;
     private Vector2 moveInput;
     private float nextAttackTime;
 
     private readonly Collider2D[] detectionResults = new Collider2D[10];
+    private ContactFilter2D contactFilter;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+        playerMovement = GetComponent<PlayerMovement>();
         mainCamera = Camera.main;
-        rb.gravityScale = 0f;
-        rb.freezeRotation = true;
 
-        if (playerAttack == null) playerAttack = GetComponent<PlayerAttack>();
+        if (playerAttack == null)
+        {
+            playerAttack = GetComponent<PlayerAttack>();
+            TryGetComponent(out playerAttack);
+
+        }
+
+        contactFilter.SetLayerMask(enemyLayer);
+        contactFilter.useLayerMask = true;
     }
 
     private void Update()
@@ -37,24 +46,31 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
-        if (moveInput.sqrMagnitude > 1f) moveInput.Normalize();
         float speed = PlayerStat.Instance != null ? PlayerStat.Instance.MoveSpeed : 5f;
-        rb.linearVelocity = moveInput * speed;
+
+        if (playerMovement != null)
+        {
+            playerMovement.Move(moveInput, speed);
+        }
     }
 
     private void RotateTowardsMouse()
     {
         if (mainCamera == null) return;
-        Vector3 mouseScreenPos = Input.mousePosition;
+
+        if (Mouse.current == null) return;
+        Vector3 mouseScreenPos = Mouse.current.position.ReadValue();
+
         mouseScreenPos.z = Mathf.Abs(mainCamera.transform.position.z - transform.position.z);
         Vector3 mouseWorldPos = mainCamera.ScreenToWorldPoint(mouseScreenPos);
-
         Vector2 lookDir = (Vector2)mouseWorldPos - (Vector2)transform.position;
+
         if (lookDir.sqrMagnitude > 0.001f)
         {
             rb.rotation = Mathf.Atan2(lookDir.y, lookDir.x) * Mathf.Rad2Deg;
         }
     }
+
 
     private void HandleAutoAttack()
     {
@@ -62,14 +78,13 @@ public class PlayerController : MonoBehaviour
         if (Time.time < nextAttackTime) return;
 
         float radius = PlayerStat.Instance.AttackRange;
-        int targets = Physics2D.OverlapCircleNonAlloc(transform.position, radius, detectionResults, enemyLayer);
+
+        int targets = Physics2D.OverlapCircle(transform.position, radius, contactFilter, detectionResults);
 
         if (targets > 0)
         {
-            // 공속에 반비례하는 쿨타임 연산
             float cooldown = 1.5f / PlayerStat.Instance.AttackSpeed;
             nextAttackTime = Time.time + cooldown;
-
             playerAttack.NormalAttack();
         }
     }

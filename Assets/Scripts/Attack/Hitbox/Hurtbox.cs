@@ -2,19 +2,19 @@ using UnityEngine;
 
 public class Hurtbox : MonoBehaviour
 {
+    [Header("피격 주체 설정")]
     [SerializeField] private GameObject owner;
 
     private IDamageable damageable;
 
     private void Awake()
     {
-        if (owner == null)
-            owner = gameObject;
+        if (owner == null) owner = gameObject;
 
-        damageable = owner.GetComponent<IDamageable>();
-
-        if (damageable == null)
+        if (!owner.TryGetComponent<IDamageable>(out damageable))
+        {
             damageable = owner.GetComponentInParent<IDamageable>();
+        }
 
         if (damageable == null)
         {
@@ -25,6 +25,8 @@ public class Hurtbox : MonoBehaviour
     public void GetHit(DamageInfo damageInfo)
     {
         if (damageable != null)
+        {
             damageable.TakeDamage(damageInfo);
+        }
     }
 }

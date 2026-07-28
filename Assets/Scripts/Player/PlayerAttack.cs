@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class PlayerAttack : MonoBehaviour
 {
-    [Header("Attack Components")]
     [SerializeField] private MeleeAttack meleeAttack;
     [SerializeField] private ProjectileAttack projectileAttack;
 
@@ -24,23 +23,14 @@ public class PlayerAttack : MonoBehaviour
         if (stat == null)
             return;
 
-        float damage = stat.AttackDamage;
-        EquipmentData weapon = stat.weaponSlot;
-
-        if (weapon == null)
-        {
-            meleeAttack?.Attack(damage);
-            return;
-        }
-
-        switch (weapon.AttackType)
+        switch (stat.CurrentAttackType)
         {
             case AttackType.Melee:
-                meleeAttack?.Attack(damage);
+                meleeAttack.Attack(stat.AttackDamage);
                 break;
 
             case AttackType.Projectile:
-                projectileAttack?.Attack(damage);
+                projectileAttack.Attack(stat.AttackDamage);
                 break;
         }
     }

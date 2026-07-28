@@ -29,8 +29,10 @@ public class ProjectileAttack : AttackBase
             spawnPoint.rotation);
 
         projectile.Launch(
-            finalDamage,
-            stat.TotalPiercingCount,
-            stat.FinalDamageDecay);
+        finalDamage,
+        stat.TotalPiercingCount,
+        stat.FinalDamageDecay,
+        DamageType.Physical,
+        TeamType.Player);
     }
 }

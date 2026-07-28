@@ -10,7 +10,8 @@ public class Projectile : PoolObject
 
     private float timer;
 
-    private float damage;
+    private DamageInfo damageInfo;
+
     private int piercing;
     private float decay;
 
@@ -28,17 +29,27 @@ public class Projectile : PoolObject
     {
         rb.linearVelocity = Vector2.zero;
 
-        damage = 0f;
+        damageInfo = default;
         piercing = 0;
         decay = 0f;
         timer = 0f;
     }
 
-    public void Launch(float damage, int piercing, float decay)
+    public void Launch(
+        float damage,
+        int piercing,
+        float decay,
+        DamageType damageType,
+        TeamType team)
     {
-        this.damage = damage;
         this.piercing = piercing;
         this.decay = decay;
+
+        damageInfo = new DamageInfo(
+            gameObject,
+            damage,
+            damageType,
+            team);
 
         rb.linearVelocity = transform.right * speed;
     }
@@ -60,14 +71,13 @@ public class Projectile : PoolObject
         if (hurtbox == null)
             return;
 
-        DamageInfo info = new DamageInfo(gameObject, damage, DamageType.Physical, TeamType.Player);
-
-        hurtbox.GetHit(info);
+        hurtbox.GetHit(damageInfo);
 
         if (piercing > 0)
         {
             piercing--;
-            damage *= (1f - decay);
+
+            damageInfo.Damage *= (1f - decay);
         }
         else
         {

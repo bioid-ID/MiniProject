@@ -3,21 +3,35 @@ using UnityEngine;
 
 public class EnemySpawnerManager : MonoBehaviour
 {
-    public GameObject monsterPrefab;
-    public Transform[] spawnPoints;
-    public float spawnInterval = 5f;
-    public bool spawnImmediatelyOnDeath = true;
+    public static EnemySpawnerManager Instance { get; private set; }
 
-    void Start()
+    [SerializeField] private Transform[] spawnPoints;
+    [SerializeField] private float spawnInterval = 5f;
+    [SerializeField] private bool spawnImmediatelyOnDeath = true;
+    [SerializeField] private int currentStageLevel = 1;
+
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+    }
+
+    private void Start()
     {
         StartCoroutine(PeriodicSpawnRoutine());
     }
 
-    IEnumerator PeriodicSpawnRoutine()
+    private IEnumerator PeriodicSpawnRoutine()
     {
         while (true)
         {
             yield return new WaitForSeconds(spawnInterval);
+
             SpawnAtRandom();
         }
     }
@@ -25,18 +39,33 @@ public class EnemySpawnerManager : MonoBehaviour
     public void OnMonsterKilled(Vector3 deadPos)
     {
         DungeonManager.Instance.LogKill();
-        PlayerData.Instance.AddExp(20f); 
 
-        if (spawnImmediatelyOnDeath)
-        {
-            Instantiate(monsterPrefab, deadPos, Quaternion.identity);
-        }
+        PlayerData.Instance.AddExp(20f);
+
+        if (!spawnImmediatelyOnDeath)
+            return;
+
+        Spawn(deadPos);
     }
 
     private void SpawnAtRandom()
     {
-        if (spawnPoints.Length == 0) return;
-        int idx = Random.Range(0, spawnPoints.Length);
-        Instantiate(monsterPrefab, spawnPoints[idx].position, Quaternion.identity);
+        if (spawnPoints.Length == 0)
+            return;
+
+        int index = Random.Range(0, spawnPoints.Length);
+
+        Spawn(spawnPoints[index].position);
+    }
+
+    private void Spawn(Vector3 position)
+    {
+        Enemy enemy = PoolManager.Instance.GetEnemy();
+
+        enemy.transform.SetPositionAndRotation(
+            position,
+            Quaternion.identity);
+
+        enemy.Initialize(currentStageLevel);
     }
 }
