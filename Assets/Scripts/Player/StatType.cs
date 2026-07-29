@@ -11,9 +11,10 @@ public enum StatType
     AttackRange,
 
     CriticalChance,
+    CriticalDamage,
     DodgeChance,
     Accuracy,
-
+    Dodge,
     DropRate,
 
     Strength,

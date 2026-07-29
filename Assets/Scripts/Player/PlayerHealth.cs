@@ -16,7 +16,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     {
         if (PlayerManager.Instance.Stat != null)
         {
-            currentHealth = PlayerManager.Instance.Stat.MaxHealth;
+            currentHealth = PlayerManager.Instance.Stat.MaxHp;
         }
     }
 
@@ -42,7 +42,7 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         currentHealth += amount;
-        float maxHp = PlayerManager.Instance.Stat.MaxHealth;
+        float maxHp = PlayerManager.Instance.Stat.MaxHp;
 
         if (currentHealth > maxHp) currentHealth = maxHp;
     }

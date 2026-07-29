@@ -1,5 +1,5 @@
 using UnityEngine;
-
+using System.Collections.Generic;
 public enum EquipmentSlot
 {
     Weapon, SubWeapon, Helmet,
@@ -172,4 +172,7 @@ public abstract class EquipmentData : ScriptableObject
                stat.TotalInt * intCoefficient +
                stat.TotalLuck * luckCoefficient;
     }
+    [Header("Buff")]
+
+    public List<BuffBase> buffs = new();
 }

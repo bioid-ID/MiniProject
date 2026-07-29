@@ -1,6 +1,6 @@
 using UnityEngine;
 using System;
-
+using System.Collections.Generic;
 public class PlayerStat : MonoBehaviour
 {
     public static PlayerStat Instance { get; private set; }
@@ -20,7 +20,7 @@ public class PlayerStat : MonoBehaviour
     [SerializeField] private int baseDex = 10;
     [SerializeField] private int baseInt = 10;
     [SerializeField] private int baseLuck = 10;
-
+    private readonly List<StatModifier> modifiers = new();
     [Header("[ Current ]")]
     private float currentHp;
     private float currentMp;
@@ -271,7 +271,7 @@ public class PlayerStat : MonoBehaviour
                 ringSlot2 = item;
                 break;
         }
-
+        ApplyEquipmentBuff(item);
         currentHp = Mathf.Min(currentHp, MaxHp);
         currentMp = Mathf.Min(currentMp, MaxMp);
     }
@@ -320,10 +320,90 @@ public class PlayerStat : MonoBehaviour
                 ringSlot2 = null;
                 break;
         }
-
+        RemoveEquipmentBuff(slot);
         currentHp = Mathf.Min(currentHp, MaxHp);
         currentMp = Mathf.Min(currentMp, MaxMp);
     }
 
     #endregion
+
+    public void AddModifier(StatModifier modifier)
+    {
+        modifiers.Add(modifier);
+    }
+    public void RemoveModifier(object source)
+    {
+        modifiers.RemoveAll(x => x.Source == source);
+    }
+
+    public void RemoveSource(object source)
+    {
+        modifiers.RemoveAll(x => x.Source == source);
+    }
+
+    public float GetModifierValue(
+      StatType stat,
+      ModifierType type)
+    {
+        float total = 0f;
+
+        foreach (StatModifier modifier in modifiers)
+        {
+            if (modifier.Stat != stat)
+                continue;
+
+            if (modifier.Type != type)
+                continue;
+
+            total += modifier.Value;
+        }
+
+        return total;
+    }
+    private void ApplyEquipmentBuff(EquipmentData item)
+    {
+        if (item == null)
+            return;
+
+        foreach (BuffBase buff in item.buffs)
+        {
+            if (buff == null)
+                continue;
+
+            BuffManager.Instance.AddBuff(buff);
+        }
+    }
+    private void RemoveEquipmentBuff(EquipmentSlot slot)
+    {
+        EquipmentData item = GetEquipment(slot);
+
+        if (item == null)
+            return;
+
+        foreach (BuffBase buff in item.buffs)
+        {
+            if (buff == null)
+                continue;
+
+            BuffManager.Instance.RemoveBuff(buff);
+        }
+    }
+    private EquipmentData GetEquipment(EquipmentSlot slot)
+    {
+        switch (slot)
+        {
+            case EquipmentSlot.Weapon: return weaponSlot;
+            case EquipmentSlot.SubWeapon: return subWeaponSlot;
+            case EquipmentSlot.Helmet: return helmetSlot;
+            case EquipmentSlot.Armor: return armorSlot;
+            case EquipmentSlot.Pants: return pantsSlot;
+            case EquipmentSlot.Gloves: return glovesSlot;
+            case EquipmentSlot.Boots: return bootsSlot;
+            case EquipmentSlot.Necklace: return necklaceSlot;
+            case EquipmentSlot.Ring1: return ringSlot1;
+            case EquipmentSlot.Ring2: return ringSlot2;
+        }
+
+        return null;
+    }
 }

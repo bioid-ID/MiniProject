@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour
     {
         RotateTowardsMouse();
         HandleAutoAttack();
+        SkillManager.Instance.UseAutoSkills();
     }
 
     private void FixedUpdate() => Move();
@@ -95,4 +96,5 @@ public class PlayerController : MonoBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, PlayerStat.Instance.AttackRange);
     }
+
 }
