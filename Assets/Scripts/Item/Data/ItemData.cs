@@ -3,7 +3,6 @@ using UnityEngine;
 public abstract class ItemData : ScriptableObject
 {
     [Header("Info")]
-
     public int id;
 
     public string itemName;
@@ -15,7 +14,11 @@ public abstract class ItemData : ScriptableObject
 
     public ItemType itemType;
 
-    public RarityType rarity;
+    public ItemGrade grade;
+
+    public bool stackable = true;
+
+    public int maxStack = 9999;
 
     public int sellPrice;
 }

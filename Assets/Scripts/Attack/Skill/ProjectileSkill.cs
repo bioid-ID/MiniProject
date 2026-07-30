@@ -8,7 +8,7 @@ public class ProjectileSkill : SkillBase
     protected override void Use()
     {
         Projectile projectile =
-            PoolManager.Instance.GetProjectile();
+      PoolManager.Instance.Get<Projectile>(PoolKey.Projectile);
 
         projectile.transform.SetPositionAndRotation(
             firePoint.position,

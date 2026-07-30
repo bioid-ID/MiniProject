@@ -60,7 +60,7 @@ public class Projectile : PoolObject
 
         if (timer <= 0f)
         {
-            PoolManager.Instance.ReturnProjectile(this);
+            PoolManager.Instance.Return(PoolKey.Projectile, this);
         }
     }
 
@@ -81,7 +81,7 @@ public class Projectile : PoolObject
         }
         else
         {
-            PoolManager.Instance.ReturnProjectile(this);
+            PoolManager.Instance.Return(PoolKey.Projectile, this);
         }
     }
 }

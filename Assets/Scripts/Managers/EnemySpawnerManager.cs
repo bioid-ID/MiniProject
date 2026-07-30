@@ -60,7 +60,9 @@ public class EnemySpawnerManager : MonoBehaviour
 
     private void Spawn(Vector3 position)
     {
-        Enemy enemy = PoolManager.Instance.GetEnemy();
+        Enemy enemy =
+    PoolManager.Instance.Get<Enemy>(
+        PoolKey.Enemy);
 
         enemy.transform.SetPositionAndRotation(
             position,

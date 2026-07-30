@@ -1,76 +1,38 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PoolManager : MonoBehaviour
 {
     public static PoolManager Instance { get; private set; }
 
-    [Header("Projectile Pool")]
-    [SerializeField] private Projectile projectilePrefab;
-    [SerializeField] private int projectilePoolSize = 100;
-
-    [Header("Enemy Pool")]
-    [SerializeField] private Enemy enemyPrefab;
-    [SerializeField] private int enemyPoolSize = 50;
-
-    private ObjectPool<Projectile> projectilePool;
-    private ObjectPool<Enemy> enemyPool;
+    private readonly Dictionary<System.Type, IPool> pools = new();
 
     private void Awake()
     {
         if (Instance != null)
         {
-            Debug.LogWarning("PoolManager가 이미 존재합니다.");
             Destroy(gameObject);
             return;
         }
 
         Instance = this;
-
-        InitializePools();
     }
 
-    private void InitializePools()
+    public void RegisterPool<T>(ObjectPool<T> pool)
+        where T : PoolObject
     {
-        projectilePool = new ObjectPool<Projectile>(
-            projectilePrefab,
-            projectilePoolSize,
-            transform);
-
-        projectilePool.Initialize();
-
-        enemyPool = new ObjectPool<Enemy>(
-            enemyPrefab,
-            enemyPoolSize,
-            transform);
-
-        enemyPool.Initialize();
+        pools[typeof(T)] = pool;
     }
 
-    #region Projectile
-
-    public Projectile GetProjectile()
+    public T Get<T>()
+        where T : PoolObject
     {
-        return projectilePool.Get();
+        return ((ObjectPool<T>)pools[typeof(T)]).Get();
     }
 
-    public void ReturnProjectile(Projectile projectile)
+    public void Return<T>(T obj)
+        where T : PoolObject
     {
-        projectilePool.Return(projectile);
+        ((ObjectPool<T>)pools[typeof(T)]).Return(obj);
     }
-
-    #endregion
-
-    #region Enemy
-
-    public Enemy GetEnemy()
-    {
-        return enemyPool.Get();
-    }
-
-    public void ReturnEnemy(Enemy enemy)
-    {
-        enemyPool.Return(enemy);
-    }
-
-    #endregion
 }

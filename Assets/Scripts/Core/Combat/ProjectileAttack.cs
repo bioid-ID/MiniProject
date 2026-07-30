@@ -1,3 +1,4 @@
+using UnityEditor.EditorTools;
 using UnityEngine;
 
 public class ProjectileAttack : AttackBase
@@ -22,7 +23,7 @@ public class ProjectileAttack : AttackBase
 
         ResetCooldown();
 
-        Projectile projectile = PoolManager.Instance.GetProjectile();
+        Projectile projectile = PoolManager.Instance.Get<Projectile>(PoolKey.Projectile);
 
         projectile.transform.SetPositionAndRotation(
             spawnPoint.position,

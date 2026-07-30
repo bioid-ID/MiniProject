@@ -83,9 +83,11 @@ public class Enemy : Character
 
     protected override void Die()
     {
-        ChangeState(EnemyState.Dead);
+        DropManager.Instance.Drop(
+         //   enemyData.dropTable,
+            transform.position);
 
-        PoolManager.Instance.ReturnEnemy(this);
+        PoolManager.Instance.Return(PoolKey.Enemy, this);
     }
 
     public void Tick(float deltaTime)

@@ -35,18 +35,13 @@ public abstract class EquipmentData : ItemData
 
     public string equipmentName;
 
-    public Sprite icon;
+
 
     [TextArea]
-    public string description;
 
     public EquipmentSlot slotType;
 
-    public EquipmentGrade grade;
-
     public int requiredLevel = 1;
-
-    public int sellPrice = 100;
 
     [Header("Weapon")]
 

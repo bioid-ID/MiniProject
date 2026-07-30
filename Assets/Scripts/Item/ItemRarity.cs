@@ -5,5 +5,6 @@ public enum ItemRarity
     Rare,
     Epic,
     Unique,
-    Legendary
+    Legendary,
+    mythic
 }
