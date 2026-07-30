@@ -3,18 +3,12 @@ using UnityEngine;
 
 public class BuffManager : MonoBehaviour
 {
-    public static BuffManager Instance { get; private set; }
+    public static BuffManager Instance;
 
     private readonly List<BuffBase> buffs = new();
 
     private void Awake()
     {
-        if (Instance != null)
-        {
-            Destroy(gameObject);
-            return;
-        }
-
         Instance = this;
     }
 
@@ -23,26 +17,21 @@ public class BuffManager : MonoBehaviour
         if (buff == null)
             return;
 
-        BuffBase runtime = Instantiate(buff);
+        buffs.Add(buff);
 
-        runtime.OnApply(PlayerStat.Instance);
+        buff.Initialize(PlayerStat.Instance);
 
-        buffs.Add(runtime);
+        buff.Apply();
     }
 
     public void RemoveBuff(BuffBase buff)
     {
-        for (int i = buffs.Count - 1; i >= 0; i--)
-        {
-            if (buffs[i].name != buff.name)
-                continue;
+        if (!buffs.Contains(buff))
+            return;
 
-            buffs[i].OnRemove(PlayerStat.Instance);
+        buff.Remove();
 
-            Destroy(buffs[i]);
-
-            buffs.RemoveAt(i);
-        }
+        buffs.Remove(buff);
     }
 
     private void Update()
@@ -51,14 +40,12 @@ public class BuffManager : MonoBehaviour
 
         for (int i = buffs.Count - 1; i >= 0; i--)
         {
-            buffs[i].Tick(PlayerStat.Instance, dt);
+            buffs[i].UpdateBuff(dt);
 
-            if (!buffs[i].IsFinished)
+            if (!buffs[i].Finished)
                 continue;
 
-            buffs[i].OnRemove(PlayerStat.Instance);
-
-            Destroy(buffs[i]);
+            buffs[i].Remove();
 
             buffs.RemoveAt(i);
         }

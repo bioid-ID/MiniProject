@@ -1,66 +1,28 @@
 using UnityEngine;
 
-public class BuffBase
+public abstract class BuffBase : ScriptableObject
 {
-    public BuffData Data { get; }
+    [SerializeField]
+    private float duration = 5f;
 
-    public int Stack { get; private set; }
+    protected PlayerStat player;
 
-    public float RemainingTime { get; private set; }
+    private float timer;
 
-    private readonly PlayerStat player;
+    public bool Finished => timer <= 0;
 
-    public BuffBase(BuffData data)
+    public void Initialize(PlayerStat player)
     {
-        Data = data;
-
-        RemainingTime = data.duration;
-
-        Stack = 1;
-
-        player = PlayerStat.Instance;
+        this.player = player;
+        timer = duration;
     }
 
-    public void Apply()
+    public void UpdateBuff(float dt)
     {
-        foreach (StatModifierData modifier in Data.modifiers)
-        {
-            player.AddModifier(
-                new StatModifier(
-                    modifier.stat,
-                    modifier.modifierType,
-                    modifier.value,
-                    this));
-        }
+        timer -= dt;
     }
 
-    public void Remove()
-    {
-        player.RemoveModifier(this);
-    }
+    public abstract void Apply();
 
-    public bool Tick(float deltaTime)
-    {
-        if (Data.isInfinite)
-            return false;
-
-        RemainingTime -= deltaTime;
-
-        return RemainingTime <= 0f;
-    }
-
-    public void Refresh()
-    {
-        RemainingTime = Data.duration;
-    }
-
-    public void AddStack()
-    {
-        if (!Data.canStack)
-            return;
-
-        Stack = Mathf.Min(
-            Stack + 1,
-            Data.maxStack);
-    }
+    public abstract void Remove();
 }

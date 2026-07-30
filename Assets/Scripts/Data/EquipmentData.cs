@@ -28,7 +28,7 @@ public enum EquipmentSet
     Hunter, Dragon, Demon, Angel
 }
 
-public abstract class EquipmentData : ScriptableObject
+public abstract class EquipmentData : ItemData
 {
 
     [Header("Info")]
