@@ -24,15 +24,47 @@ public class PoolManager : MonoBehaviour
         pools[typeof(T)] = pool;
     }
 
+    public void RegisterPool<T>(T prefab, int initialSize, Transform parent = null)
+        where T : PoolObject
+    {
+        if (prefab == null)
+        {
+            Debug.LogError($"PoolManager: {typeof(T).Name} prefab is null.");
+            return;
+        }
+
+        if (parent == null)
+            parent = transform;
+
+        ObjectPool<T> pool = new ObjectPool<T>(prefab, initialSize, parent);
+        pool.Initialize();
+        RegisterPool(pool);
+    }
+
     public T Get<T>()
         where T : PoolObject
     {
-        return ((ObjectPool<T>)pools[typeof(T)]).Get();
+        if (!pools.TryGetValue(typeof(T), out IPool pool))
+        {
+            Debug.LogError($"PoolManager: {typeof(T).Name} pool is not registered.");
+            return null;
+        }
+
+        return ((ObjectPool<T>)pool).Get();
     }
 
     public void Return<T>(T obj)
         where T : PoolObject
     {
-        ((ObjectPool<T>)pools[typeof(T)]).Return(obj);
+        if (obj == null)
+            return;
+
+        if (!pools.TryGetValue(typeof(T), out IPool pool))
+        {
+            Debug.LogError($"PoolManager: {typeof(T).Name} pool is not registered.");
+            return;
+        }
+
+        ((ObjectPool<T>)pool).Return(obj);
     }
 }

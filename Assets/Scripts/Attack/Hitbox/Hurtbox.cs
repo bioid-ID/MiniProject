@@ -2,8 +2,9 @@ using UnityEngine;
 
 public class Hurtbox : MonoBehaviour
 {
-    [Header("피격 주체 설정")]
+    [Header("??? ??? ????")]
     [SerializeField] private GameObject owner;
+    [SerializeField] private TeamType team = TeamType.Neutral;
 
     private IDamageable damageable;
 
@@ -18,15 +19,18 @@ public class Hurtbox : MonoBehaviour
 
         if (damageable == null)
         {
-            Debug.LogError($"{name} : IDamageable을 찾지 못했습니다.");
+            Debug.LogError($"{name} : IDamageable?? ??? ????????.");
         }
     }
 
     public void GetHit(DamageInfo damageInfo)
     {
-        if (damageable != null)
-        {
-            damageable.TakeDamage(damageInfo);
-        }
+        if (damageable == null)
+            return;
+
+        if (damageInfo.Team == team)
+            return;
+
+        damageable.TakeDamage(damageInfo);
     }
 }

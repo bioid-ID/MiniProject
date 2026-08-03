@@ -8,6 +8,11 @@ public abstract class SkillBase : MonoBehaviour
 
     public SkillData Data => data;
 
+    public void SetData(SkillData skillData)
+    {
+        data = skillData;
+    }
+
     public bool CanUse =>
         cooldown <= 0f;
 

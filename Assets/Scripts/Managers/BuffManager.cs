@@ -3,12 +3,18 @@ using UnityEngine;
 
 public class BuffManager : MonoBehaviour
 {
-    public static BuffManager Instance;
+    public static BuffManager Instance { get; private set; }
 
     private readonly List<BuffBase> buffs = new();
 
     private void Awake()
     {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
     }
 

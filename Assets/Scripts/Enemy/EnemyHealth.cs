@@ -22,6 +22,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
         currentHp -= damage;
 
+        DamagePopupManager.Show(transform.position, damage, isEnemyTarget: true, damageInfo.IsCritical);
+
         if (currentHp <= 0f)
             Die();
     }
@@ -33,7 +35,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        EnemySpawnerManager.Instance.OnMonsterKilled(transform.position);
+        EnemySpawnerManager.Instance?.OnMonsterKilled(transform.position);
 
         enemy.Kill();
     }

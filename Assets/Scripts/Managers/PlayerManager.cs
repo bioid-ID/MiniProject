@@ -13,20 +13,24 @@ public class PlayerManager : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance == null)
+        if (Instance != null && Instance != this)
         {
-            Instance = this;
-        }
-        else
-        {
-            Destroy(gameObject);
+            Destroy(this);
             return;
-           
         }
+
+        Instance = this;
+
         Controller = GetComponent<PlayerController>();
         Attack = GetComponent<PlayerAttack>();
         Health = GetComponent<PlayerHealth>();
         Stat = GetComponent<PlayerStat>();
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     private void Start()
@@ -38,10 +42,10 @@ public class PlayerManager : MonoBehaviour
         if (Health != null)
         {
             DamageInfo simpleDamage = new DamageInfo(
-                attacker: null,                 // °ø°ÝÀÚ ¾øÀ½ (È¯°æ ¿ä¼Ò µî)
-                damage: amount,                 // Àü´Þ¹ÞÀº ´ë¹ÌÁö ¼öÄ¡
-                damageType: DamageType.Physical,// ±âº» ¹°¸® ´ë¹ÌÁö Å¸ÀÔ
-                team: TeamType.Enemy            // Àû Áø¿µÀ¸·ÎºÎÅÍ ¹Þ´Â ´ë¹ÌÁö Ã³¸®
+                attacker: null,                 // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ (È¯ï¿½ï¿½ ï¿½ï¿½ï¿½ ï¿½ï¿½)
+                damage: amount,                 // ï¿½ï¿½ï¿½Þ¹ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½Ä¡
+                damageType: DamageType.Physical,// ï¿½âº» ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½
+                team: TeamType.Enemy            // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îºï¿½ï¿½ï¿½ ï¿½Þ´ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ Ã³ï¿½ï¿½
             );
 
             Health.TakeDamage(simpleDamage);

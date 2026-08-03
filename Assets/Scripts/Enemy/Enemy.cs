@@ -6,6 +6,9 @@ public class Enemy : Character
     [SerializeField] private EnemyData enemyData;
     [SerializeField] private int level = 1;
 
+    [SerializeField] private float fallbackDetectRange = 8f;
+    [SerializeField] private float fallbackAttackRange = 1.5f;
+
     private EnemyMovement movement;
     private EnemyAttack attack;
     private EnemyHealth health;
@@ -14,7 +17,14 @@ public class Enemy : Character
     private EnemyState currentState;
 
     public EnemyState CurrentState => currentState;
-    public AttackType AttackType => enemyData.attackType;
+    public AttackType AttackType =>
+        enemyData != null ? enemyData.attackType : AttackType.Melee;
+
+    private float DetectRange =>
+        enemyData != null ? enemyData.detectRange : fallbackDetectRange;
+
+    private float AttackRange =>
+        enemyData != null ? enemyData.attackRange : fallbackAttackRange;
 
     protected override void Awake()
     {
@@ -35,7 +45,11 @@ public class Enemy : Character
     {
         base.OnSpawn();
 
-        EnemyManager.Instance.Register(this);
+        if (player == null && PlayerManager.Instance != null)
+            player = PlayerManager.Instance.transform;
+
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.Register(this);
 
         Initialize(level);
 
@@ -44,20 +58,23 @@ public class Enemy : Character
 
     public override void OnDespawn()
     {
-        EnemyManager.Instance.Unregister(this);
+        if (EnemyManager.Instance != null)
+            EnemyManager.Instance.Unregister(this);
 
         base.OnDespawn();
     }
 
     public void Initialize(int stageLevel)
     {
+        level = stageLevel;
+
         if (enemyData == null)
         {
-            Debug.LogError($"{name} : EnemyData가 없습니다.");
+            SetStats(40f + stageLevel * 15f, 8f + stageLevel * 2f, 2f + stageLevel, 0f);
+            movement.Initialize(3f);
+            health.Initialize(MaxHp);
             return;
         }
-
-        level = stageLevel;
 
         float boss = enemyData.isBoss ? 2f : 1f;
         float lv = level - 1;
@@ -83,11 +100,13 @@ public class Enemy : Character
 
     protected override void Die()
     {
-        DropManager.Instance.Drop(
-         //   enemyData.dropTable,
-            transform.position);
+        ChangeState(EnemyState.Dead);
 
-        PoolManager.Instance.Return(PoolKey.Enemy, this);
+        if (DropManager.Instance != null)
+            DropManager.Instance.Drop(enemyData, transform.position);
+
+        if (PoolManager.Instance != null)
+            PoolManager.Instance.Return(this);
     }
 
     public void Tick(float deltaTime)
@@ -150,7 +169,7 @@ public class Enemy : Character
                 transform.position,
                 player.position);
 
-        if (distance <= enemyData.detectRange)
+        if (distance <= DetectRange)
         {
             ChangeState(EnemyState.Chase);
         }
@@ -166,13 +185,13 @@ public class Enemy : Character
                 transform.position,
                 player.position);
 
-        if (distance > enemyData.detectRange)
+        if (distance > DetectRange)
         {
             ChangeState(EnemyState.Idle);
             return;
         }
 
-        if (distance <= enemyData.attackRange)
+        if (distance <= AttackRange)
         {
             ChangeState(EnemyState.Attack);
             return;
@@ -194,7 +213,7 @@ public class Enemy : Character
                 transform.position,
                 player.position);
 
-        if (distance > enemyData.attackRange)
+        if (distance > AttackRange)
         {
             ChangeState(EnemyState.Chase);
             return;

@@ -29,9 +29,36 @@ public class EnemyMovement : MonoBehaviour
         moveDirection = Vector2.zero;
     }
 
+    [SerializeField] private float separationRadius = 0.3f;
+    [SerializeField] private float separationForce = 1f;
+
     private void FixedUpdate()
     {
-        rb.linearVelocity = moveDirection * moveSpeed;
+        Vector2 velocity = moveDirection * moveSpeed + GetSeparation();
+        rb.linearVelocity = velocity;
+    }
+
+    private Vector2 GetSeparation()
+    {
+        Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, separationRadius);
+        Vector2 push = Vector2.zero;
+
+        foreach (Collider2D hit in hits)
+        {
+            if (hit.gameObject == gameObject)
+                continue;
+
+            if (hit.GetComponent<Enemy>() == null)
+                continue;
+
+            Vector2 away = (Vector2)transform.position - (Vector2)hit.transform.position;
+            if (away.sqrMagnitude < 0.001f)
+                continue;
+
+            push += away.normalized / away.magnitude;
+        }
+
+        return push * separationForce;
     }
 
     private void OnDisable()

@@ -77,7 +77,10 @@ public class EnemyAttack : MonoBehaviour
         if (attackPoint == null)
             return;
 
-        Projectile projectile = PoolManager.Instance.Get<Projectile>(PoolKey.Projectile);
+        Projectile projectile = PoolManager.Instance.Get<Projectile>();
+
+        if (projectile == null)
+            return;
 
         projectile.transform.SetPositionAndRotation(
             attackPoint.position,

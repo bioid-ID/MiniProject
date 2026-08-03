@@ -23,6 +23,13 @@ public class EnemySpawnerManager : MonoBehaviour
 
     private void Start()
     {
+        if (spawnPoints == null || spawnPoints.Length == 0)
+        {
+            Debug.LogWarning("[EnemySpawner] No spawn points configured.");
+            return;
+        }
+
+        SpawnAtRandom();
         StartCoroutine(PeriodicSpawnRoutine());
     }
 
@@ -38,9 +45,10 @@ public class EnemySpawnerManager : MonoBehaviour
 
     public void OnMonsterKilled(Vector3 deadPos)
     {
-        DungeonManager.Instance.LogKill();
+        DungeonManager.Instance?.LogKill();
 
-        PlayerData.Instance.AddExp(20f);
+        if (PlayerStat.Instance != null)
+            PlayerStat.Instance.GainExp(20f);
 
         if (!spawnImmediatelyOnDeath)
             return;
@@ -50,7 +58,7 @@ public class EnemySpawnerManager : MonoBehaviour
 
     private void SpawnAtRandom()
     {
-        if (spawnPoints.Length == 0)
+        if (spawnPoints == null || spawnPoints.Length == 0)
             return;
 
         int index = Random.Range(0, spawnPoints.Length);
@@ -61,8 +69,10 @@ public class EnemySpawnerManager : MonoBehaviour
     private void Spawn(Vector3 position)
     {
         Enemy enemy =
-    PoolManager.Instance.Get<Enemy>(
-        PoolKey.Enemy);
+            PoolManager.Instance.Get<Enemy>();
+
+        if (enemy == null)
+            return;
 
         enemy.transform.SetPositionAndRotation(
             position,

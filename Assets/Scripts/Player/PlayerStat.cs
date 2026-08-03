@@ -11,6 +11,11 @@ public class PlayerStat : MonoBehaviour
 
     public float MaxExp => (Mathf.Pow(currentLevel, 2.5f) * 80f) + 100f;
 
+    [Header("[ Currency ]")]
+    [SerializeField] private int gold;
+
+    public int Gold => gold;
+
     [Header("[ Points ]")]
     [SerializeField] private int statPoints;
     [SerializeField] private int passivePoints;
@@ -107,17 +112,49 @@ public class PlayerStat : MonoBehaviour
 
     private void Awake()
     {
-        if (Instance != null)
+        if (Instance != null && Instance != this)
         {
-            Destroy(gameObject);
+            Destroy(this);
             return;
         }
 
         Instance = this;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
     private void Start()
     {
+        if (PlayerData.Instance != null)
+            PlayerData.Instance.ApplyTo(this);
+        else
+        {
+            currentHp = MaxHp;
+            currentMp = MaxMp;
+        }
+
+        SaveManager.Instance?.ApplyEquipmentToCurrentPlayer();
+    }
+
+    public void AddGold(int amount)
+    {
+        if (amount <= 0)
+            return;
+
+        gold += amount;
+    }
+
+    public void LoadProgress(int loadGold, int level, float exp, int statPts, int passivePts)
+    {
+        gold = loadGold;
+        currentLevel = Mathf.Max(1, level);
+        currentExp = Mathf.Max(0f, exp);
+        statPoints = statPts;
+        passivePoints = passivePts;
         currentHp = MaxHp;
         currentMp = MaxMp;
     }
@@ -180,6 +217,8 @@ public class PlayerStat : MonoBehaviour
         currentMp = MaxMp;
 
         Debug.Log($"Level Up! Lv.{currentLevel}");
+        PlayerData.Instance?.SaveFrom(this);
+        SaveManager.Instance?.Save();
     }
 
     public bool InvestStat(string statName)
@@ -218,6 +257,22 @@ public class PlayerStat : MonoBehaviour
 
     #region Equipment
 
+    public void ClearAllEquipment()
+    {
+        weaponSlot = null;
+        subWeaponSlot = null;
+        helmetSlot = null;
+        armorSlot = null;
+        pantsSlot = null;
+        glovesSlot = null;
+        bootsSlot = null;
+        necklaceSlot = null;
+        ringSlot1 = null;
+        ringSlot2 = null;
+        currentHp = Mathf.Min(currentHp, MaxHp);
+        currentMp = Mathf.Min(currentMp, MaxMp);
+    }
+
     public void EquipItem(EquipmentData item)
     {
         if (item == null)
@@ -225,7 +280,7 @@ public class PlayerStat : MonoBehaviour
 
         if (currentLevel < item.requiredLevel)
         {
-            Debug.LogWarning("레벨 부족");
+            Debug.LogWarning("???? ????");
             return;
         }
 

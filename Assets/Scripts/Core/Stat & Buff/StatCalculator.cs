@@ -99,7 +99,7 @@ public static class StatCalculator
     {
         float value =
             stat.weaponSlot == null
-                ? 1.5f
+                ? 2.5f
                 : stat.weaponSlot.attackRange;
 
         value +=
@@ -108,13 +108,13 @@ public static class StatCalculator
 
         value +=
             stat.GetModifierValue(
-                StatType.Range,
+                StatType.AttackRange,
                 ModifierType.Flat);
 
         value *=
             1f +
             stat.GetModifierValue(
-                StatType.Range,
+                StatType.AttackRange,
                 ModifierType.Percent);
 
         return value;
@@ -325,7 +325,7 @@ public static class StatCalculator
 
         value -=
             stat.GetModifierValue(
-                StatType.DecayReduction,
+                StatType.DamageDecay,
                 ModifierType.Flat);
 
         return Mathf.Max(0f, value);

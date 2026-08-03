@@ -30,4 +30,9 @@ public class Hitbox : MonoBehaviour
 
         hurtbox.GetHit(damageInfo);
     }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        OnTriggerEnter2D(other);
+    }
 }

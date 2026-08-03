@@ -7,17 +7,19 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private float currentHealth;
     private int maxHp;
     [Header("Invincible Settings")]
-    [SerializeField] private float invincibleDuration = 0.5f; 
+    [SerializeField] private float invincibleDuration = 0.03f; 
     private bool isInvincible = false;
 
     public float CurrentHealth => currentHealth;
 
     private void Start()
     {
-        if (PlayerManager.Instance.Stat != null)
-        {
+        if (PlayerManager.Instance != null && PlayerManager.Instance.Stat != null)
             currentHealth = PlayerManager.Instance.Stat.MaxHp;
-        }
+        else if (PlayerStat.Instance != null)
+            currentHealth = PlayerStat.Instance.MaxHp;
+        else
+            currentHealth = 100f;
     }
 
     public void TakeDamage(DamageInfo damageInfo)
@@ -25,7 +27,10 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (isInvincible || currentHealth <= 0) return;
 
         currentHealth -= (int)damageInfo.Damage;
-        Debug.Log($"Ã¼·Â: {currentHealth}");
+
+        float damage = damageInfo.Damage;
+        DamagePopupManager.Show(transform.position, damage, isEnemyTarget: false, damageInfo.IsCritical);
+        HUDController.Instance?.ShowDamageTaken(damage);
 
         if (currentHealth <= 0)
         {
@@ -42,9 +47,16 @@ public class PlayerHealth : MonoBehaviour, IDamageable
         if (currentHealth <= 0) return;
 
         currentHealth += amount;
-        float maxHp = PlayerManager.Instance.Stat.MaxHp;
 
-        if (currentHealth > maxHp) currentHealth = maxHp;
+        float maxHealth = PlayerStat.Instance != null
+            ? PlayerStat.Instance.MaxHp
+            : currentHealth;
+
+        if (PlayerManager.Instance != null && PlayerManager.Instance.Stat != null)
+            maxHealth = PlayerManager.Instance.Stat.MaxHp;
+
+        if (currentHealth > maxHealth)
+            currentHealth = maxHealth;
     }
 
     private IEnumerator InvincibleRoutine()
@@ -57,6 +69,9 @@ public class PlayerHealth : MonoBehaviour, IDamageable
     private void Die()
     {
         currentHealth = 0;
-        Debug.LogError("»ç¸Á");
+        Debug.Log("Player died.");
+
+        if (DungeonManager.Instance != null)
+            DungeonManager.Instance.ExitOrDie();
     }
 }

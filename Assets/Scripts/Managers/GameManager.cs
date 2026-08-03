@@ -8,16 +8,21 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     private Projectile projectilePrefab;
 
+    [SerializeField]
+    private Loot lootPrefab;
+
     private void Start()
     {
-        PoolManager.Instance.RegisterPool(
-            PoolKey.Enemy,
-            enemyPrefab,
-            80);
+        if (PoolManager.Instance == null)
+        {
+            Debug.LogError("GameManager: PoolManager.Instance is missing.");
+            return;
+        }
 
-        PoolManager.Instance.RegisterPool(
-            PoolKey.Projectile,
-            projectilePrefab,
-            150);
+        PoolManager.Instance.RegisterPool(enemyPrefab, 80);
+        PoolManager.Instance.RegisterPool(projectilePrefab, 150);
+
+        if (lootPrefab != null)
+            PoolManager.Instance.RegisterPool(lootPrefab, 30);
     }
 }

@@ -9,29 +9,44 @@ public class PlayerAttack : MonoBehaviour
 
     private void Awake()
     {
-        stat = PlayerStat.Instance;
+        ResolveComponents();
+    }
+
+    private void Start()
+    {
+        ResolveComponents();
+    }
+
+    public void NormalAttack()
+    {
+        ResolveComponents();
+
+        if (stat == null || meleeAttack == null && projectileAttack == null)
+            return;
+
+        switch (stat.CurrentAttackType)
+        {
+            case AttackType.Melee:
+                if (meleeAttack != null)
+                    meleeAttack.Attack(stat.AttackDamage);
+                break;
+
+            case AttackType.Projectile:
+                if (projectileAttack != null)
+                    projectileAttack.Attack(stat.AttackDamage);
+                break;
+        }
+    }
+
+    private void ResolveComponents()
+    {
+        if (stat == null)
+            stat = PlayerStat.Instance;
 
         if (meleeAttack == null)
             meleeAttack = GetComponent<MeleeAttack>();
 
         if (projectileAttack == null)
             projectileAttack = GetComponent<ProjectileAttack>();
-    }
-
-    public void NormalAttack()
-    {
-        if (stat == null)
-            return;
-
-        switch (stat.CurrentAttackType)
-        {
-            case AttackType.Melee:
-                meleeAttack.Attack(stat.AttackDamage);
-                break;
-
-            case AttackType.Projectile:
-                projectileAttack.Attack(stat.AttackDamage);
-                break;
-        }
     }
 }

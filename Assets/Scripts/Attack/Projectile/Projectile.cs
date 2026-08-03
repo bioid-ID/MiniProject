@@ -40,7 +40,8 @@ public class Projectile : PoolObject
         int piercing,
         float decay,
         DamageType damageType,
-        TeamType team)
+        TeamType team,
+        Vector2 direction)
     {
         this.piercing = piercing;
         this.decay = decay;
@@ -51,7 +52,19 @@ public class Projectile : PoolObject
             damageType,
             team);
 
-        rb.linearVelocity = transform.right * speed;
+        Vector2 moveDirection = direction.sqrMagnitude > 0.01f ? direction.normalized : Vector2.right;
+        PlayerAim.ApplyDirection(transform, moveDirection);
+        rb.linearVelocity = moveDirection * speed;
+    }
+
+    public void Launch(
+        float damage,
+        int piercing,
+        float decay,
+        DamageType damageType,
+        TeamType team)
+    {
+        Launch(damage, piercing, decay, damageType, team, transform.right);
     }
 
     private void Update()
@@ -60,7 +73,7 @@ public class Projectile : PoolObject
 
         if (timer <= 0f)
         {
-            PoolManager.Instance.Return(PoolKey.Projectile, this);
+            PoolManager.Instance?.Return(this);
         }
     }
 
@@ -81,7 +94,7 @@ public class Projectile : PoolObject
         }
         else
         {
-            PoolManager.Instance.Return(PoolKey.Projectile, this);
+            PoolManager.Instance?.Return(this);
         }
     }
 }

@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 [System.Serializable]
@@ -28,45 +26,64 @@ public class Skill
     public void Upgrade() => level++;
 }
 
+/// <summary>
+/// ï¿½ï¿½ ï¿½ï¿½È¯ ï¿½Ä¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ç´ï¿½ ï¿½ï¿½ï¿½àµµ ï¿½ï¿½ï¿½ï¿½ï¿½.
+/// ï¿½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½Ä¡ï¿½ï¿½ PlayerStatï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½Ô´Ï´ï¿½.
+/// </summary>
 public class PlayerData : MonoBehaviour
 {
-    public static PlayerData Instance;
+    public static PlayerData Instance { get; private set; }
 
-    [Header("Currency & Exp")]
-    public int Gold = 0;
+    [Header("Progress (persisted)")]
+    public int Gold;
     public int Level = 1;
-    public float CurrentExp = 0f;
-    public float MaxExp = 100f;
+    public float CurrentExp;
+    public int StatPoints;
+    public int PassivePoints;
 
-    [Header("Stats Point")]
-    public int StatPoints = 0;
-    public int InvestedAttack = 0;
-    public int InvestedHp = 0;
+    [Header("Legacy (lobby UIï¿½ï¿½, ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½)")]
+    public int InvestedAttack;
+    public int InvestedHp;
+    public int InvestedPassiveAttack;
+    public Item Weapon = new Item { itemName = "ï¿½âº» ï¿½ï¿½", baseStat = 15, goldCost = 150 };
+    public Skill FireBall = new Skill { skillName = "ï¿½ï¿½ï¿½Ì¾îº¼", baseDamage = 40 };
 
-    [Header("Passive Tree")]
-    public int InvestedPassiveAttack = 0; 
-
-    [Header("Equipment & Skills")]
-    public Item Weapon = new Item { itemName = "±âº» °Ë", baseStat = 15, goldCost = 150 };
-    public Skill FireBall = new Skill { skillName = "ÆÄÀÌ¾îº¼", baseDamage = 40 };
-
-    void Awake()
+    private void Awake()
     {
-        if (Instance == null) { Instance = this; DontDestroyOnLoad(gameObject); }
-        else Destroy(gameObject);
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+    }
+
+    public void SaveFrom(PlayerStat stat)
+    {
+        if (stat == null)
+            return;
+
+        Gold = stat.Gold;
+        Level = stat.CurrentLevel;
+        CurrentExp = stat.CurrentExp;
+        StatPoints = stat.StatPoints;
+        PassivePoints = stat.PassivePoints;
+    }
+
+    public void ApplyTo(PlayerStat stat)
+    {
+        if (stat == null)
+            return;
+
+        stat.LoadProgress(Gold, Level, CurrentExp, StatPoints, PassivePoints);
     }
 
     public void AddExp(float amount)
     {
-        CurrentExp += amount;
-        if (CurrentExp >= MaxExp)
-        {
-            CurrentExp -= MaxExp;
-            Level++;
-            StatPoints += 5; 
-            MaxExp *= 1.2f; 
-            Debug.Log($"·¹º§¾÷! ÇöÀç ·¹º§: {Level}");
-        }
+        if (PlayerStat.Instance != null)
+            PlayerStat.Instance.GainExp(amount);
     }
 
     public int GetTotalAttack()

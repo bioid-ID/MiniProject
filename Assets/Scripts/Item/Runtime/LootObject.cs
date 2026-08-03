@@ -44,7 +44,7 @@ public class LootObject : MonoBehaviour
         if (!other.CompareTag("Player"))
             return;
 
-        InventoryManager.Instance.AddItem(item, amount);
+        Inventory.Instance?.AddItem(item, amount);
 
       //  PoolManager.Instance.ReturnLoot(this);
     }

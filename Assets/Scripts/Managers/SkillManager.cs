@@ -34,11 +34,18 @@ public class SkillManager : MonoBehaviour
 
     public void AddSkill(SkillBase skill)
     {
-        SkillSlot slot = new SkillSlot();
+        if (skill == null)
+            return;
 
-        slot.runtimeSkill = skill;
+        foreach (SkillSlot slot in equippedSkills)
+        {
+            if (slot.runtimeSkill == skill)
+                return;
+        }
 
-        equippedSkills.Add(slot);
+        SkillSlot newSlot = new SkillSlot();
+        newSlot.runtimeSkill = skill;
+        equippedSkills.Add(newSlot);
     }
 
     public void RemoveSkill(SkillBase skill)

@@ -11,17 +11,36 @@ public class MeleeAttack : AttackBase
 
     protected override void Awake()
     {
-
         base.Awake();
+        ResolveHitbox();
+    }
 
+    private void Start()
+    {
+        ResolveHitbox();
         if (meleeHitbox != null)
             meleeHitbox.gameObject.SetActive(false);
     }
 
+    private void ResolveHitbox()
+    {
+        if (meleeHitbox != null)
+            return;
+
+        Transform hitboxTransform = transform.Find("MeleeHitbox");
+        if (hitboxTransform != null)
+            meleeHitbox = hitboxTransform.GetComponent<Hitbox>();
+    }
+
     public override void Attack(float finalDamage)
     {
-        if (!CanAttack()) return;
-        if (meleeHitbox == null) return;
+        if (!CanAttack())
+            return;
+
+        ResolveHitbox();
+
+        if (meleeHitbox == null)
+            return;
 
         ResetCooldown();
 
@@ -40,12 +59,22 @@ public class MeleeAttack : AttackBase
 
     private IEnumerator AttackSequence(DamageInfo damageInfo)
     {
+        Vector2 fallback = Vector2.right;
+        PlayerVisual visual = GetComponent<PlayerVisual>();
+        if (visual != null)
+            fallback = visual.LastFacing;
+
+        Vector2 aimDirection = PlayerAim.GetAttackDirection(transform, fallback);
+        PlayerAim.ApplyDirection(meleeHitbox.transform, aimDirection);
+        meleeHitbox.transform.localPosition = new Vector3(aimDirection.x, aimDirection.y, 0f) * 0.6f;
+
         meleeHitbox.Initialize(damageInfo);
         meleeHitbox.gameObject.SetActive(true);
 
         yield return new WaitForSeconds(attackDuration);
 
         meleeHitbox.gameObject.SetActive(false);
+        meleeHitbox.transform.localPosition = Vector3.zero;
         attackCoroutine = null;
     }
 
