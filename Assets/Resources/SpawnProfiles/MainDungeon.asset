@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b76ce274b6866a94780c2313b655835e, type: 3}
+  m_Name: MainDungeon
+  m_EditorClassIdentifier: Assembly-CSharp::DungeonSpawnProfile
+  initialSpawnCount: 2
+  viewportSpawnMargin: 1.2
+  enemies:
+  - prefabKey: Enemy_Basic
+    enemyData: {fileID: 11400000, guid: 67be35bab1a93c54c89554f5532cadbc, type: 2}
+    weight: 3
+    spawnInterval: 3
+    stageLevel: 1
+    maxAlive: 0
+  - prefabKey: Enemy_Elite
+    enemyData: {fileID: 11400000, guid: 6aabd1313c5b2f24aad85f24f9d60fd9, type: 2}
+    weight: 1
+    spawnInterval: 7
+    stageLevel: 2
+    maxAlive: 0
+  bossKillsRequired: 12
+  bossSecondsRequired: 90
+  bossStageLevel: 5
+  bossData: {fileID: 11400000, guid: 2ea868a4d84e90046aab03fd10b7093a, type: 2}
+  bossPrefabKey: Enemy_Boss

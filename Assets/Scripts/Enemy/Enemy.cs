@@ -6,25 +6,24 @@ public class Enemy : Character
     [SerializeField] private EnemyData enemyData;
     [SerializeField] private int level = 1;
 
-    [SerializeField] private float fallbackDetectRange = 8f;
-    [SerializeField] private float fallbackAttackRange = 1.5f;
-
     private EnemyMovement movement;
     private EnemyAttack attack;
     private EnemyHealth health;
     private Transform player;
-
     private EnemyState currentState;
+    private float stunTimer;
+    private int spawnEntryIndex = -1;
+    private string visualKey;
 
+    public EnemyData Data => enemyData;
+    public int SpawnEntryIndex => spawnEntryIndex;
     public EnemyState CurrentState => currentState;
     public AttackType AttackType =>
         enemyData != null ? enemyData.attackType : AttackType.Melee;
 
-    private float DetectRange =>
-        enemyData != null ? enemyData.detectRange : fallbackDetectRange;
-
-    private float AttackRange =>
-        enemyData != null ? enemyData.attackRange : fallbackAttackRange;
+    private float DetectRange => enemyData != null ? enemyData.detectRange : 8f;
+    private float AttackRange => enemyData != null ? enemyData.attackRange : 1.5f;
+    private float StopDistanceFactor => enemyData != null ? enemyData.stopDistanceFactor : 0.85f;
 
     protected override void Awake()
     {
@@ -37,22 +36,20 @@ public class Enemy : Character
         if (health == null)
             health = GetComponentInChildren<EnemyHealth>();
 
-        if (PlayerManager.Instance != null)
-            player = PlayerManager.Instance.transform;
+        ResolvePlayerTarget();
     }
 
     public override void OnSpawn()
     {
         base.OnSpawn();
 
-        if (player == null && PlayerManager.Instance != null)
-            player = PlayerManager.Instance.transform;
+        stunTimer = 0f;
+        ResolvePlayerTarget();
 
         if (EnemyManager.Instance != null)
             EnemyManager.Instance.Register(this);
 
         Initialize(level);
-
         ChangeState(EnemyState.Idle);
     }
 
@@ -61,12 +58,31 @@ public class Enemy : Character
         if (EnemyManager.Instance != null)
             EnemyManager.Instance.Unregister(this);
 
+        stunTimer = 0f;
+        spawnEntryIndex = -1;
+        visualKey = null;
+        transform.localScale = Vector3.one;
         base.OnDespawn();
+    }
+
+    public void ApplyData(EnemyData data, string resourcesVisualKey = null, int entryIndex = -1)
+    {
+        enemyData = data;
+        visualKey = resourcesVisualKey;
+        spawnEntryIndex = entryIndex;
+        EnemyVisualUtility.ApplyBody(this, enemyData, visualKey);
+    }
+
+    public void BindSpawnEntry(int entryIndex, string resourcesVisualKey)
+    {
+        spawnEntryIndex = entryIndex;
+        visualKey = resourcesVisualKey;
     }
 
     public void Initialize(int stageLevel)
     {
         level = stageLevel;
+        EnemyVisualUtility.ApplyBody(this, enemyData, visualKey);
 
         if (enemyData == null)
         {
@@ -92,10 +108,36 @@ public class Enemy : Character
             Mathf.Pow(1f + enemyData.defenseGrowthRate * boss, lv);
 
         SetStats(hp, atk, def, 0f);
-
         movement.Initialize(enemyData.moveSpeed);
-
         health.Initialize(MaxHp);
+
+        if (enemyData.isBoss)
+        {
+            transform.localScale = Vector3.one * enemyData.bossScale;
+            attack?.ConfigureAsBoss(enemyData);
+        }
+    }
+
+    public void ApplyHitReaction(Vector2 direction, float knockbackForce, float stunDuration)
+    {
+        if (currentState == EnemyState.Dead)
+            return;
+
+        float kbMult = enemyData != null ? enemyData.knockbackTakenMult : 1f;
+        float stunMult = enemyData != null ? enemyData.stunTakenMult : 1f;
+
+        knockbackForce *= kbMult;
+        stunDuration *= stunMult;
+
+        if (knockbackForce > 0f)
+            movement?.ApplyKnockback(direction, knockbackForce);
+
+        if (stunDuration <= 0f)
+            return;
+
+        stunTimer = Mathf.Max(stunTimer, stunDuration);
+        movement?.ApplyStun(stunDuration);
+        ChangeState(EnemyState.Stunned);
     }
 
     protected override void Die()
@@ -114,20 +156,36 @@ public class Enemy : Character
         if (!gameObject.activeSelf)
             return;
 
+        ResolvePlayerTarget();
+
+        if (stunTimer > 0f)
+        {
+            stunTimer -= deltaTime;
+            if (stunTimer > 0f)
+            {
+                currentState = EnemyState.Stunned;
+                movement?.Stop();
+                return;
+            }
+
+            stunTimer = 0f;
+            if (currentState == EnemyState.Stunned)
+                ChangeState(EnemyState.Chase);
+        }
+
         switch (currentState)
         {
             case EnemyState.Idle:
                 UpdateIdle();
                 break;
-
             case EnemyState.Chase:
                 UpdateChase();
                 break;
-
             case EnemyState.Attack:
                 UpdateAttack();
                 break;
-
+            case EnemyState.Stunned:
+                break;
             case EnemyState.Dead:
                 break;
         }
@@ -143,18 +201,12 @@ public class Enemy : Character
         switch (currentState)
         {
             case EnemyState.Idle:
-                movement.Stop();
-                break;
-
-            case EnemyState.Chase:
-                break;
-
             case EnemyState.Attack:
-                movement.Stop();
-                break;
-
+            case EnemyState.Stunned:
             case EnemyState.Dead:
-                movement.Stop();
+                movement?.Stop();
+                break;
+            case EnemyState.Chase:
                 break;
         }
     }
@@ -164,15 +216,9 @@ public class Enemy : Character
         if (player == null)
             return;
 
-        float distance =
-            Vector2.Distance(
-                transform.position,
-                player.position);
-
+        float distance = Vector2.Distance(transform.position, player.position);
         if (distance <= DetectRange)
-        {
             ChangeState(EnemyState.Chase);
-        }
     }
 
     private void UpdateChase()
@@ -180,26 +226,22 @@ public class Enemy : Character
         if (player == null)
             return;
 
-        float distance =
-            Vector2.Distance(
-                transform.position,
-                player.position);
+        float distance = Vector2.Distance(transform.position, player.position);
 
-        if (distance > DetectRange)
+        if (distance > DetectRange * 1.15f)
         {
             ChangeState(EnemyState.Idle);
             return;
         }
 
-        if (distance <= AttackRange)
+        float stopDistance = AttackRange * StopDistanceFactor;
+        if (distance <= stopDistance)
         {
             ChangeState(EnemyState.Attack);
             return;
         }
 
-        Vector2 dir =
-            (player.position - transform.position).normalized;
-
+        Vector2 dir = ((Vector2)player.position - (Vector2)transform.position).normalized;
         movement.Move(dir);
     }
 
@@ -208,10 +250,7 @@ public class Enemy : Character
         if (player == null)
             return;
 
-        float distance =
-            Vector2.Distance(
-                transform.position,
-                player.position);
+        float distance = Vector2.Distance(transform.position, player.position);
 
         if (distance > AttackRange)
         {
@@ -220,7 +259,22 @@ public class Enemy : Character
         }
 
         movement.Stop();
-
         attack.Attack();
+    }
+
+    private void ResolvePlayerTarget()
+    {
+        if (player != null)
+            return;
+
+        if (PlayerManager.Instance != null)
+        {
+            player = PlayerManager.Instance.transform;
+            return;
+        }
+
+        GameObject playerObject = GameObject.FindGameObjectWithTag("Player");
+        if (playerObject != null)
+            player = playerObject.transform;
     }
 }

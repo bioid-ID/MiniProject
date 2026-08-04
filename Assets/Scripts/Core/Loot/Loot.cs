@@ -5,21 +5,48 @@ public class Loot : PoolObject
     private LootData data;
 
     private SpriteRenderer spriteRenderer;
+    private Rigidbody2D rb;
+    private LootPhysicsBehavior physicsBehavior;
 
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+        rb = GetComponent<Rigidbody2D>();
+        physicsBehavior = GetComponent<LootPhysicsBehavior>();
     }
 
-    public void Initialize(LootData loot)
+    public void Initialize(LootData loot, Vector3 spawnPosition)
     {
         data = loot;
         ApplyVisual();
+
+        if (physicsBehavior != null)
+            physicsBehavior.LaunchPop(spawnPosition);
     }
 
     public override void OnSpawn()
     {
         ApplyVisual();
+    }
+
+    public override void OnDespawn()
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector2.zero;
+            rb.angularVelocity = 0f;
+        }
+
+        base.OnDespawn();
+    }
+
+    public void TryPickup()
+    {
+        if (!IsSpawned || physicsBehavior == null || !physicsBehavior.CanPickup)
+            return;
+
+        ApplyLoot();
+        PoolManager.Instance?.Return(this);
     }
 
     private void ApplyVisual()
@@ -48,14 +75,15 @@ public class Loot : PoolObject
         if (!other.CompareTag("Player"))
             return;
 
-        ApplyLoot();
-        PoolManager.Instance?.Return(this);
+        TryPickup();
     }
 
     private void ApplyLoot()
     {
         if (data == null)
             return;
+
+        GameFeel.PickupItem();
 
         switch (data.lootType)
         {

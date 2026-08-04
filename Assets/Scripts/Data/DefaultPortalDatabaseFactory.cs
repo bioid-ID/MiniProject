@@ -20,8 +20,8 @@ public static class DefaultPortalDatabaseFactory
             },
             new PortalSpawnDefinition
             {
-                portal = DefaultPortalDefinitions.TestDungeon,
-                objectName = "Portal_TestDungeon",
+                portal = DefaultPortalDefinitions.RoguelikeDungeon,
+                objectName = "Portal_RoguelikeDungeon",
                 worldPosition = new Vector3(-2.5f, 0f, 0f)
             }
         };
@@ -32,10 +32,25 @@ public static class DefaultPortalDatabaseFactory
             {
                 portal = DefaultPortalDefinitions.ReturnHub,
                 objectName = "Portal_ReturnHub",
-                worldPosition = new Vector3(-2.5f, 0f, 0f)
+                worldPosition = new Vector3(0f, 2.5f, 0f)
             }
         };
 
         return cachedDatabase;
+    }
+
+    public static PortalDatabase EnsureDefaults(PortalDatabase database)
+    {
+        PortalDatabase defaults = CreateRuntimeDatabase();
+        if (database == null)
+            return defaults;
+
+        if (database.hubPortals == null || database.hubPortals.Length == 0)
+            database.hubPortals = defaults.hubPortals;
+
+        if (database.dungeonPortals == null || database.dungeonPortals.Length == 0)
+            database.dungeonPortals = defaults.dungeonPortals;
+
+        return database;
     }
 }

@@ -58,6 +58,17 @@ public class PlayerController : MonoBehaviour
             playerAttack = GetComponent<PlayerAttack>();
     }
 
+    public void RefreshCombatSetup()
+    {
+        if (playerAttack == null)
+        {
+            playerAttack = GetComponent<PlayerAttack>();
+            TryGetComponent(out playerAttack);
+        }
+
+        ApplyEnemyLayer();
+    }
+
     private void ApplyEnemyLayer()
     {
         if (enemyLayer.value == 0)
@@ -65,6 +76,7 @@ public class PlayerController : MonoBehaviour
 
         contactFilter.SetLayerMask(enemyLayer);
         contactFilter.useLayerMask = true;
+        contactFilter.useTriggers = true;
     }
 
     private bool IsInHub => GameSceneNames.IsHubScene(SceneManager.GetActiveScene().name);
@@ -99,7 +111,7 @@ public class PlayerController : MonoBehaviour
         if (!dashEnabled || playerDash == null)
             return;
 
-        if (Keyboard.current == null || !Keyboard.current.leftShiftKey.wasPressedThisFrame)
+        if (!GameInput.WasPressed(GameAction.Dash))
             return;
 
         Vector2 dashDirection = moveInput;
@@ -124,10 +136,26 @@ public class PlayerController : MonoBehaviour
             return;
 
         float radius = Mathf.Max(PlayerStat.Instance.AttackRange, 2.5f);
+
+        if (HasEnemyInRange(radius))
+            TryAttack(radius);
+    }
+
+    private bool HasEnemyInRange(float radius)
+    {
         int targets = Physics2D.OverlapCircle(transform.position, radius, contactFilter, detectionResults);
 
-        if (targets > 0)
-            TryAttack(radius);
+        for (int i = 0; i < targets; i++)
+        {
+            Collider2D hit = detectionResults[i];
+            if (hit == null)
+                continue;
+
+            if (hit.GetComponentInParent<Enemy>() != null)
+                return true;
+        }
+
+        return false;
     }
 
     private void TryAttack(float radius = 2.5f)

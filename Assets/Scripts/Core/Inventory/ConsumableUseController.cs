@@ -5,7 +5,7 @@ public class ConsumableUseController : MonoBehaviour
 {
     private void Update()
     {
-        if (Keyboard.current == null || !Keyboard.current.uKey.wasPressedThisFrame)
+        if (!GameInput.WasPressed(GameAction.Potion))
             return;
 
         if (GameStateController.Instance == null || !GameStateController.Instance.IsPlaying)
@@ -32,7 +32,8 @@ public class ConsumableUseController : MonoBehaviour
             return;
 
         inventory.RemoveItem(potion, 1);
-        health.Heal(potion.hp);
+        health.Heal(potion.hp, HealSource.Potion);
+        GameFeel.UsePotion();
         SaveManager.Instance?.Save();
     }
 

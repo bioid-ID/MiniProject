@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -19,17 +20,37 @@ public class SceneLoader : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += HandleSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= HandleSceneLoaded;
+    }
+
+    private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        isLoading = false;
+    }
+
     public bool CanLoadScene(string sceneName)
     {
         return SceneBuildUtility.IsSceneInBuild(sceneName);
     }
 
-    public void LoadScene(string sceneName, bool saveBeforeLoad = true)
+    public void LoadScene(string sceneName, bool saveBeforeLoad = true, Action beforeLoad = null)
     {
-        if (isLoading || string.IsNullOrWhiteSpace(sceneName))
+        if (string.IsNullOrWhiteSpace(sceneName))
             return;
 
-        if (!SceneBuildUtility.IsSceneInBuild(sceneName))
+        if (isLoading)
+            Debug.LogWarning("[SceneLoader] Previous load flag was still set — forcing new load.");
+
+        string resolvedSceneName = SceneBuildUtility.ResolveSceneName(sceneName);
+
+        if (!SceneBuildUtility.IsSceneInBuild(resolvedSceneName))
         {
             Debug.LogError(SceneBuildUtility.GetMissingSceneHelpMessage(sceneName));
             return;
@@ -38,12 +59,26 @@ public class SceneLoader : MonoBehaviour
         isLoading = true;
         GameStateController.Instance?.PrepareSceneTransition();
         GamePauseController.Instance?.ForceClose();
+        ResultUIController.Instance?.HideImmediate();
+        InventoryUIController.Instance?.ForceClose();
+        Time.timeScale = 1f;
+
+        if (SceneTransitionController.Instance != null)
+        {
+            SceneTransitionController.Instance.LoadScene(
+                resolvedSceneName,
+                saveBeforeLoad,
+                beforeLoad,
+                () => isLoading = false);
+            return;
+        }
 
         if (saveBeforeLoad)
             SaveManager.Instance?.Save();
 
-        Debug.Log($"[SceneLoader] Loading {sceneName}...");
-        SceneManager.LoadScene(sceneName);
+        beforeLoad?.Invoke();
+        Debug.Log($"[SceneLoader] Loading {resolvedSceneName}...");
+        SceneManager.LoadScene(resolvedSceneName);
         isLoading = false;
     }
 }

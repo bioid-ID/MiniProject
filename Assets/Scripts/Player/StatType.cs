@@ -23,5 +23,10 @@ public enum StatType
     Luck,
 
     Piercing,
-    DamageDecay
+    DamageDecay,
+
+    HpRegen,
+    MpRegen,
+    LifeSteal,
+    ManaSteal
 }

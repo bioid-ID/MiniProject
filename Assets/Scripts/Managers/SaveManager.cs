@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 using UnityEngine;
 
 public class SaveManager : MonoBehaviour
@@ -69,9 +70,25 @@ public class SaveManager : MonoBehaviour
             equipment = CaptureEquipment()
         };
 
-        string json = JsonUtility.ToJson(saveData);
+        string json = JsonConvert.SerializeObject(saveData);
         PlayerPrefs.SetString(SaveKey, json);
         PlayerPrefs.Save();
+    }
+
+    private static SaveData DeserializeSaveData(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            return null;
+
+        try
+        {
+            return JsonConvert.DeserializeObject<SaveData>(json);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"SaveManager: Newtonsoft load failed, trying legacy JsonUtility. {exception.Message}");
+            return JsonUtility.FromJson<SaveData>(json);
+        }
     }
 
     public void Load()
@@ -85,7 +102,7 @@ public class SaveManager : MonoBehaviour
             return;
         }
 
-        SaveData saveData = JsonUtility.FromJson<SaveData>(PlayerPrefs.GetString(SaveKey));
+        SaveData saveData = DeserializeSaveData(PlayerPrefs.GetString(SaveKey));
 
         if (saveData == null)
         {

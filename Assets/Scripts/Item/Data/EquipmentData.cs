@@ -110,6 +110,12 @@ public abstract class EquipmentData : ItemData
 
     public float bonusLifeSteal;
 
+    public float bonusManaSteal;
+
+    public float bonusHpRegen;
+
+    public float bonusMpRegen;
+
     public float bonusReflect;
 
     public float bonusBurnChance;

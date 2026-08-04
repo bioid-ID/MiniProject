@@ -3,15 +3,31 @@ using UnityEngine;
 [RequireComponent(typeof(Rigidbody2D))]
 public class EnemyMovement : MonoBehaviour
 {
+    [SerializeField] private float separationRadius = 0.35f;
+    [SerializeField] private float separationForce = 1.2f;
+    [SerializeField] private float knockbackDrag = 8f;
+
     private Rigidbody2D rb;
-
     private float moveSpeed;
-
     private Vector2 moveDirection;
+    private Vector2 knockbackVelocity;
+    private float stunTimer;
+
+    public bool IsStunned => stunTimer > 0f;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
+    }
+
+    private void OnEnable()
+    {
+        knockbackVelocity = Vector2.zero;
+        stunTimer = 0f;
+        moveDirection = Vector2.zero;
+
+        if (rb != null)
+            rb.WakeUp();
     }
 
     public void Initialize(float speed)
@@ -21,6 +37,9 @@ public class EnemyMovement : MonoBehaviour
 
     public void Move(Vector2 direction)
     {
+        if (IsStunned)
+            return;
+
         moveDirection = direction.normalized;
     }
 
@@ -29,13 +48,41 @@ public class EnemyMovement : MonoBehaviour
         moveDirection = Vector2.zero;
     }
 
-    [SerializeField] private float separationRadius = 0.3f;
-    [SerializeField] private float separationForce = 1f;
+    public void ApplyKnockback(Vector2 direction, float force)
+    {
+        if (force <= 0f)
+            return;
+
+        if (direction.sqrMagnitude < 0.001f)
+            direction = Vector2.up;
+
+        knockbackVelocity += direction.normalized * force;
+    }
+
+    public void ApplyStun(float duration)
+    {
+        if (duration <= 0f)
+            return;
+
+        stunTimer = Mathf.Max(stunTimer, duration);
+        moveDirection = Vector2.zero;
+    }
 
     private void FixedUpdate()
     {
-        Vector2 velocity = moveDirection * moveSpeed + GetSeparation();
+        if (stunTimer > 0f)
+            stunTimer -= Time.fixedDeltaTime;
+
+        Vector2 velocity = knockbackVelocity;
+
+        if (!IsStunned)
+            velocity += moveDirection * moveSpeed + GetSeparation();
+
         rb.linearVelocity = velocity;
+        knockbackVelocity = Vector2.MoveTowards(
+            knockbackVelocity,
+            Vector2.zero,
+            knockbackDrag * Time.fixedDeltaTime);
     }
 
     private Vector2 GetSeparation()
@@ -48,7 +95,7 @@ public class EnemyMovement : MonoBehaviour
             if (hit.gameObject == gameObject)
                 continue;
 
-            if (hit.GetComponent<Enemy>() == null)
+            if (hit.GetComponentInParent<Enemy>() == null)
                 continue;
 
             Vector2 away = (Vector2)transform.position - (Vector2)hit.transform.position;
@@ -63,7 +110,11 @@ public class EnemyMovement : MonoBehaviour
 
     private void OnDisable()
     {
-        rb.linearVelocity = Vector2.zero;
+        if (rb != null)
+            rb.linearVelocity = Vector2.zero;
+
         moveDirection = Vector2.zero;
+        knockbackVelocity = Vector2.zero;
+        stunTimer = 0f;
     }
 }

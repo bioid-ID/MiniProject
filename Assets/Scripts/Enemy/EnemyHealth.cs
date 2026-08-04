@@ -19,10 +19,10 @@ public class EnemyHealth : MonoBehaviour, IDamageable
     public void TakeDamage(DamageInfo damageInfo)
     {
         float damage = DamageCalculator.CalculateDamage(damageInfo, enemy);
-
         currentHp -= damage;
 
         DamagePopupManager.Show(transform.position, damage, isEnemyTarget: true, damageInfo.IsCritical);
+        CombatHitUtility.ApplyOnHitEffects(enemy, damageInfo, damage);
 
         if (currentHp <= 0f)
             Die();
@@ -35,8 +35,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     private void Die()
     {
-        EnemySpawnerManager.Instance?.OnMonsterKilled(transform.position);
-
+        GameFeel.EnemyKilled();
+        EnemySpawnerManager.Instance?.OnMonsterKilled(enemy, transform.position);
         enemy.Kill();
     }
 }

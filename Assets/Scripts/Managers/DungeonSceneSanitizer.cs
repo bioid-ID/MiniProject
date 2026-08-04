@@ -2,10 +2,26 @@ using UnityEngine;
 
 public static class DungeonSceneSanitizer
 {
-    public static GameObject PreparePlayer()
+    private static bool sceneSanitized;
+
+    public static void ResetForNewScene()
     {
+        sceneSanitized = false;
+        DungeonSceneSetupUtility.ResetGameplayState();
+    }
+
+    public static void SanitizeSceneOnce()
+    {
+        if (sceneSanitized)
+            return;
+
+        sceneSanitized = true;
         RemoveBrokenSceneEnemies();
         RemoveDuplicatePoolManagers();
+    }
+
+    public static GameObject PreparePlayer()
+    {
         return ConsolidatePlayers();
     }
 
@@ -17,6 +33,7 @@ public static class DungeonSceneSanitizer
             if (enemy == null)
                 continue;
 
+            EnemyManager.Instance?.Unregister(enemy);
             Object.Destroy(enemy.gameObject);
         }
 
@@ -27,14 +44,15 @@ public static class DungeonSceneSanitizer
 
     private static void RemoveDuplicatePoolManagers()
     {
-        PoolManager[] poolManagers = Object.FindObjectsByType<PoolManager>(FindObjectsSortMode.None);
-        if (poolManagers.Length <= 1)
+        PoolManager keeper = PoolManager.Instance;
+        if (keeper == null)
             return;
 
-        for (int i = 1; i < poolManagers.Length; i++)
+        PoolManager[] poolManagers = Object.FindObjectsByType<PoolManager>(FindObjectsSortMode.None);
+        foreach (PoolManager poolManager in poolManagers)
         {
-            if (poolManagers[i] != null)
-                Object.Destroy(poolManagers[i].gameObject);
+            if (poolManager != null && poolManager != keeper)
+                Object.Destroy(poolManager.gameObject);
         }
     }
 

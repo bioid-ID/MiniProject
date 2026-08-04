@@ -4,10 +4,12 @@ using UnityEngine;
 public class PortalTrigger : MonoBehaviour, IInteractable
 {
     [SerializeField] private PortalData portalData;
-    [SerializeField] private float extraInteractPadding = 0.35f;
+    [SerializeField] private float interactRange = -1f; // BALANCE: portalInteractRange when < 0
 
     public PortalFlow Flow => portalData != null ? portalData.flow : PortalFlow.EnterDungeon;
     public string PortalId => portalData != null ? portalData.portalId : string.Empty;
+
+    private float InteractRange => interactRange > 0f ? interactRange : GameBalance.PortalInteractRange;
 
     private void Reset()
     {
@@ -25,9 +27,11 @@ public class PortalTrigger : MonoBehaviour, IInteractable
         if (!CanInteract(interactor) || portalData == null)
             return string.Empty;
 
+        string keyLabel = GameKeyBindings.GetDisplayName(GameKeyBindings.Interact);
+
         return portalData.flow == PortalFlow.ReturnToHub
-            ? $"[Space] Return to {portalData.displayName}"
-            : $"[Space] Enter {portalData.displayName}";
+            ? $"[{keyLabel}] Return to {portalData.displayName}"
+            : $"[{keyLabel}] Enter {portalData.displayName}";
     }
 
     public bool CanInteract(Transform interactor)
@@ -38,15 +42,7 @@ public class PortalTrigger : MonoBehaviour, IInteractable
         if (GameStateController.Instance != null && !GameStateController.Instance.CanWorldInteract)
             return false;
 
-        Collider2D portalCollider = GetComponent<Collider2D>();
-        if (portalCollider != null && portalCollider.OverlapPoint(interactor.position))
-            return true;
-
-        float range = 1f;
-        if (portalCollider != null)
-            range = Mathf.Max(portalCollider.bounds.extents.x, portalCollider.bounds.extents.y) + extraInteractPadding;
-
-        return Vector2.Distance(interactor.position, transform.position) <= range;
+        return Vector2.Distance(interactor.position, transform.position) <= InteractRange;
     }
 
     public void Interact(Transform interactor)
@@ -58,19 +54,24 @@ public class PortalTrigger : MonoBehaviour, IInteractable
 
         if (portalData.flow == PortalFlow.ReturnToHub)
         {
-            DungeonManager.Instance.EscapeToHub();
+            InteractionPromptUI.Instance?.ClearPrompt();
+            GameFeel.PortalEnter();
+            DungeonManager.Instance.EscapePortalDirect();
             return;
         }
 
         if (portalData.resetDungeonRun)
             DungeonManager.Instance.ResetRunStats();
 
-        if (SceneLoader.Instance != null && !SceneLoader.Instance.CanLoadScene(portalData.targetSceneName))
+        string resolvedSceneName = SceneBuildUtility.ResolveSceneName(portalData.targetSceneName);
+
+        if (SceneLoader.Instance != null && !SceneLoader.Instance.CanLoadScene(resolvedSceneName))
         {
             Debug.LogError($"Portal '{portalData.displayName}' target scene is missing from Build Settings: {portalData.targetSceneName}");
             return;
         }
 
-        DungeonManager.Instance.EnterDungeon(portalData.targetSceneName);
+        GameFeel.PortalEnter();
+        DungeonManager.Instance.EnterDungeon(resolvedSceneName);
     }
 }

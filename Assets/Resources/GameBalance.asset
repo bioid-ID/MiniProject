@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2869b76dfdb9790499c2e9980702a81b, type: 3}
+  m_Name: GameBalance
+  m_EditorClassIdentifier: Assembly-CSharp::GameBalanceConfig
+  portalInteractRange: 1.15
+  playerInteractRadius: 1.4
+  spawnIntervalMain: 3
+  spawnIntervalRoguelike: 2.5
+  initialSpawnMain: 2
+  initialSpawnRoguelike: 3
+  viewportSpawnMargin: 1.2
+  enemyDetectRange: 31
+  enemyAttackRange: 1.35
+  enemyMoveSpeedFallback: 3
+  enemyStopDistanceFactor: 0.85
+  bossKillsMain: 12
+  bossKillsRoguelike: 10
+  bossSecondsMain: 90
+  bossSecondsRoguelike: 75
+  bossStageLevelMain: 5
+  bossStageLevelRoguelike: 4
+  bossScale: 1.6
+  bossComboHits: 3
+  bossComboGap: 0.2
+  bossAttackCooldown: 1.35
+  normalAttackCooldown: 1
+  meleeHitDuration: 0.15
+  meleeKnockback: 2.4
+  projectileKnockback: 1.2
+  meleeStun: 0.18
+  projectileStun: 0.08
+  critKnockbackMult: 1.35
+  critStunMult: 1.5
+  baseHpRegen: 1.5
+  baseMpRegen: 1
+  hpRegenPerLevel: 0.15
+  mpRegenPerLevel: 0.12
+  hpRegenPerStr: 0.05
+  mpRegenPerInt: 0.08
+  baseLifeSteal: 0.03
+  baseManaSteal: 0.02
+  goldPerKill: 50
+  expPerKill: 20
+  roguelikeBaseStr: 10
+  roguelikeBaseDex: 10
+  roguelikeBaseInt: 10
+  roguelikeBaseLuck: 10

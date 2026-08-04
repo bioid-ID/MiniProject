@@ -18,6 +18,12 @@ public static class PortalSpawner
         SpawnDefinitions(database.dungeonPortals, PortalFlow.ReturnToHub);
     }
 
+    public static void EnsureReturnPortal(Vector3 worldPosition)
+    {
+        PortalData returnPortal = DefaultPortalDefinitions.ReturnHub;
+        UpsertPortal(returnPortal, "Portal_ReturnHub", worldPosition);
+    }
+
     private static void SpawnDefinitions(PortalSpawnDefinition[] definitions, PortalFlow expectedFlow)
     {
         if (definitions == null)
@@ -35,25 +41,36 @@ public static class PortalSpawner
             if (string.IsNullOrWhiteSpace(portalId))
                 continue;
 
-            if (FindExistingPortal(portalId))
-                continue;
-
-            PortalFactory.CreateFromData(
+            UpsertPortal(
                 definition.portal,
                 string.IsNullOrWhiteSpace(definition.objectName) ? definition.portal.portalId : definition.objectName,
                 definition.worldPosition);
         }
     }
 
-    private static bool FindExistingPortal(string portalId)
+    private static void UpsertPortal(PortalData data, string objectName, Vector3 worldPosition)
+    {
+        PortalTrigger existing = FindPortal(data.portalId);
+        if (existing != null)
+        {
+            existing.transform.position = worldPosition;
+            existing.gameObject.SetActive(true);
+            existing.ApplyData(data);
+            return;
+        }
+
+        PortalFactory.CreateFromData(data, objectName, worldPosition);
+    }
+
+    private static PortalTrigger FindPortal(string portalId)
     {
         PortalTrigger[] portals = Object.FindObjectsByType<PortalTrigger>(FindObjectsSortMode.None);
         foreach (PortalTrigger portal in portals)
         {
             if (portal != null && portal.PortalId == portalId)
-                return true;
+                return portal;
         }
 
-        return false;
+        return null;
     }
 }

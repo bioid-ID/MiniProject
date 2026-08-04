@@ -44,27 +44,26 @@ public class MeleeAttack : AttackBase
 
         ResetCooldown();
 
-        DamageInfo damageInfo = new DamageInfo(
-            gameObject,
-            finalDamage,
-            DamageType.Physical,
-            TeamType.Player
-        );
-
-        if (attackCoroutine != null)
-            StopCoroutine(attackCoroutine);
-
-        attackCoroutine = StartCoroutine(AttackSequence(damageInfo));
-    }
-
-    private IEnumerator AttackSequence(DamageInfo damageInfo)
-    {
         Vector2 fallback = Vector2.right;
         PlayerVisual visual = GetComponent<PlayerVisual>();
         if (visual != null)
             fallback = visual.LastFacing;
 
         Vector2 aimDirection = PlayerAim.GetAttackDirection(transform, fallback);
+        DamageInfo damageInfo = CombatHitUtility.BuildPlayerAttack(
+            gameObject,
+            finalDamage,
+            aimDirection,
+            AttackMethod.Melee);
+
+        if (attackCoroutine != null)
+            StopCoroutine(attackCoroutine);
+
+        attackCoroutine = StartCoroutine(AttackSequence(damageInfo, aimDirection));
+    }
+
+    private IEnumerator AttackSequence(DamageInfo damageInfo, Vector2 aimDirection)
+    {
         PlayerAim.ApplyDirection(meleeHitbox.transform, aimDirection);
         meleeHitbox.transform.localPosition = new Vector3(aimDirection.x, aimDirection.y, 0f) * 0.6f;
 

@@ -51,6 +51,7 @@ public class ProjectileSkill : SkillBase
             0f,
             DamageType.Physical,
             TeamType.Player,
-            aimDirection);
+            aimDirection,
+            AttackMethod.Skill);
     }
 }

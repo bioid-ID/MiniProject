@@ -28,7 +28,10 @@ public static class DefaultEquipmentDefinitions
         rustySword.weaponAtk = 12f;
         rustySword.attackRange = 2f;
         rustySword.attackSpeed = 1f;
+        rustySword.knockBack = 2.8f;
         rustySword.bonusStr = 2;
+        rustySword.bonusLifeSteal = 0.04f;
+        rustySword.bonusManaSteal = 0.02f;
         return rustySword;
     }
 

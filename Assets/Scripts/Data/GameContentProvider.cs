@@ -11,11 +11,18 @@ public static class GameContentProvider
             if (portalDatabase != null)
                 return portalDatabase;
 
-            portalDatabase = Resources.Load<PortalDatabase>("PortalDatabase");
-            if (portalDatabase == null)
-                portalDatabase = DefaultPortalDatabaseFactory.CreateRuntimeDatabase();
+            PortalDatabase asset = Resources.Load<PortalDatabase>("PortalDatabase");
+            portalDatabase = asset != null
+                ? asset
+                : DefaultPortalDatabaseFactory.CreateRuntimeDatabase();
 
+            portalDatabase = DefaultPortalDatabaseFactory.EnsureDefaults(portalDatabase);
             return portalDatabase;
         }
+    }
+
+    public static void ResetCache()
+    {
+        portalDatabase = null;
     }
 }

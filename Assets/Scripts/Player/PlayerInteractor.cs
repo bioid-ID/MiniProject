@@ -3,11 +3,13 @@ using UnityEngine.InputSystem;
 
 public class PlayerInteractor : MonoBehaviour
 {
-    [SerializeField] private float interactRadius = 2f;
+    [SerializeField] private float interactRadius = -1f; // BALANCE: playerInteractRadius when < 0
     [SerializeField] private LayerMask interactLayer = ~0;
 
     private readonly Collider2D[] overlapResults = new Collider2D[16];
     private IInteractable currentTarget;
+
+    private float InteractRadius => interactRadius > 0f ? interactRadius : GameBalance.PlayerInteractRadius;
 
     private void Update()
     {
@@ -40,7 +42,7 @@ public class PlayerInteractor : MonoBehaviour
 
     private bool WasSpacePressedThisFrame()
     {
-        return Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
+        return GameInput.WasPressed(GameAction.Interact);
     }
 
     private IInteractable FindBestInteractable()
@@ -61,7 +63,7 @@ public class PlayerInteractor : MonoBehaviour
             useTriggers = true
         };
 
-        int count = Physics2D.OverlapCircle(transform.position, interactRadius, filter, overlapResults);
+        int count = Physics2D.OverlapCircle(transform.position, InteractRadius, filter, overlapResults);
         IInteractable best = null;
         float bestDistance = float.MaxValue;
 
@@ -119,6 +121,6 @@ public class PlayerInteractor : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, interactRadius);
+        Gizmos.DrawWireSphere(transform.position, InteractRadius);
     }
 }

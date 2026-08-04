@@ -289,6 +289,56 @@ public static class StatCalculator
 
     #endregion
 
+    #region Regen / Steal
+
+    public static float CalculateHpRegen(PlayerStat stat)
+    {
+        var bal = GameBalance.Config; // BALANCE
+        float value =
+            bal.baseHpRegen +
+            stat.CurrentLevel * bal.hpRegenPerLevel +
+            stat.TotalStr * bal.hpRegenPerStr +
+            stat.SumEquipmentFloat(item => item.bonusHpRegen);
+
+        value += stat.GetModifierValue(StatType.HpRegen, ModifierType.Flat);
+        value *= 1f + stat.GetModifierValue(StatType.HpRegen, ModifierType.Percent);
+        return Mathf.Max(0f, value);
+    }
+
+    public static float CalculateMpRegen(PlayerStat stat)
+    {
+        var bal = GameBalance.Config; // BALANCE
+        float value =
+            bal.baseMpRegen +
+            stat.CurrentLevel * bal.mpRegenPerLevel +
+            stat.TotalInt * bal.mpRegenPerInt +
+            stat.SumEquipmentFloat(item => item.bonusMpRegen);
+
+        value += stat.GetModifierValue(StatType.MpRegen, ModifierType.Flat);
+        value *= 1f + stat.GetModifierValue(StatType.MpRegen, ModifierType.Percent);
+        return Mathf.Max(0f, value);
+    }
+
+    public static float CalculateLifeSteal(PlayerStat stat)
+    {
+        var bal = GameBalance.Config; // BALANCE
+        float value = bal.baseLifeSteal + stat.SumEquipmentFloat(item => item.bonusLifeSteal);
+        value += stat.GetModifierValue(StatType.LifeSteal, ModifierType.Flat);
+        value *= 1f + stat.GetModifierValue(StatType.LifeSteal, ModifierType.Percent);
+        return Mathf.Clamp01(value);
+    }
+
+    public static float CalculateManaSteal(PlayerStat stat)
+    {
+        var bal = GameBalance.Config; // BALANCE
+        float value = bal.baseManaSteal + stat.SumEquipmentFloat(item => item.bonusManaSteal);
+        value += stat.GetModifierValue(StatType.ManaSteal, ModifierType.Flat);
+        value *= 1f + stat.GetModifierValue(StatType.ManaSteal, ModifierType.Percent);
+        return Mathf.Clamp01(value);
+    }
+
+    #endregion
+
     #region Projectile
 
     public static int CalculatePiercing(PlayerStat stat)

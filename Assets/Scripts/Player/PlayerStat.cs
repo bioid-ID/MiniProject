@@ -97,6 +97,11 @@ public class PlayerStat : MonoBehaviour
 
     public float FinalDamageDecay => StatCalculator.CalculateDecay(this);
 
+    public float HpRegen => StatCalculator.CalculateHpRegen(this);
+    public float MpRegen => StatCalculator.CalculateMpRegen(this);
+    public float LifeSteal => StatCalculator.CalculateLifeSteal(this);
+    public float ManaSteal => StatCalculator.CalculateManaSteal(this);
+
     #endregion
 
     public AttackType CurrentAttackType
@@ -140,6 +145,58 @@ public class PlayerStat : MonoBehaviour
         SaveManager.Instance?.ApplyEquipmentToCurrentPlayer();
     }
 
+    private void Update()
+    {
+        TickRegen(Time.deltaTime);
+    }
+
+    private void TickRegen(float deltaTime)
+    {
+        if (deltaTime <= 0f)
+            return;
+
+        if (GameStateController.Instance != null && !GameStateController.Instance.IsPlaying)
+            return;
+
+        float hpRegen = HpRegen * deltaTime;
+        if (hpRegen > 0f)
+        {
+            PlayerHealth health = GetComponent<PlayerHealth>();
+            if (health != null)
+                health.Heal(hpRegen, HealSource.Regen);
+            else
+                currentHp = Mathf.Min(currentHp + hpRegen, MaxHp);
+        }
+
+        float mpRegen = MpRegen * deltaTime;
+        if (mpRegen > 0f)
+            RestoreMp(mpRegen, ManaSource.Regen);
+    }
+
+    public void RestoreMp(float amount, ManaSource source = ManaSource.Other)
+    {
+        if (amount <= 0f)
+            return;
+
+        float before = currentMp;
+        currentMp = Mathf.Min(currentMp + amount, MaxMp);
+        float actual = currentMp - before;
+        if (actual > 0f)
+            DungeonManager.Instance?.RunStats.LogMana(actual, source);
+    }
+
+    public bool SpendMp(float amount)
+    {
+        if (amount <= 0f)
+            return true;
+
+        if (currentMp < amount)
+            return false;
+
+        currentMp -= amount;
+        return true;
+    }
+
     public void AddGold(int amount)
     {
         if (amount <= 0)
@@ -157,6 +214,26 @@ public class PlayerStat : MonoBehaviour
         passivePoints = passivePts;
         currentHp = MaxHp;
         currentMp = MaxMp;
+    }
+
+    /// <summary>
+    /// Roguelike entry: keep gold only, reset combat progress to starter values.
+    /// </summary>
+    public void ApplyRoguelikeFreshStart(bool keepGold)
+    {
+        var bal = GameBalance.Config; // BALANCE
+        int keptGold = keepGold ? gold : 0;
+        ClearAllEquipment();
+        baseStr = bal.roguelikeBaseStr;
+        baseDex = bal.roguelikeBaseDex;
+        baseInt = bal.roguelikeBaseInt;
+        baseLuck = bal.roguelikeBaseLuck;
+        LoadProgress(keptGold, level: 1, exp: 0f, statPts: 0, passivePts: 0);
+    }
+
+    public void SetGold(int amount)
+    {
+        gold = Mathf.Max(0, amount);
     }
 
     #region Equipment Sum
@@ -280,104 +357,117 @@ public class PlayerStat : MonoBehaviour
 
         if (currentLevel < item.requiredLevel)
         {
-            Debug.LogWarning("???? ????");
+            Debug.LogWarning("Required level not met.");
             return;
         }
 
-        switch (item.slotType)
-        {
-            case EquipmentSlot.Weapon:
-                weaponSlot = item;
-                break;
+        EquipmentSlot slot = item.slotType;
+        EquipmentData previous = GetEquipped(slot);
+        if (previous != null)
+            RemoveEquipmentBuffFromItem(previous);
 
-            case EquipmentSlot.SubWeapon:
-                subWeaponSlot = item;
-                break;
-
-            case EquipmentSlot.Helmet:
-                helmetSlot = item;
-                break;
-
-            case EquipmentSlot.Armor:
-                armorSlot = item;
-                break;
-
-            case EquipmentSlot.Pants:
-                pantsSlot = item;
-                break;
-
-            case EquipmentSlot.Gloves:
-                glovesSlot = item;
-                break;
-
-            case EquipmentSlot.Boots:
-                bootsSlot = item;
-                break;
-
-            case EquipmentSlot.Necklace:
-                necklaceSlot = item;
-                break;
-
-            case EquipmentSlot.Ring1:
-                ringSlot1 = item;
-                break;
-
-            case EquipmentSlot.Ring2:
-                ringSlot2 = item;
-                break;
-        }
+        SetEquipped(slot, item);
         ApplyEquipmentBuff(item);
         currentHp = Mathf.Min(currentHp, MaxHp);
         currentMp = Mathf.Min(currentMp, MaxMp);
     }
 
+    public bool TryEquipFromInventory(EquipmentData item)
+    {
+        if (item == null || Inventory.Instance == null)
+            return false;
+
+        if (!Inventory.Instance.HasItem(item, 1))
+            return false;
+
+        if (currentLevel < item.requiredLevel)
+            return false;
+
+        EquipmentSlot slot = ResolveEquipSlot(item);
+        EquipmentData previous = GetEquipped(slot);
+
+        Inventory.Instance.RemoveItem(item, 1);
+
+        if (previous != null)
+        {
+            RemoveEquipmentBuffFromItem(previous);
+            Inventory.Instance.AddItem(previous, 1);
+        }
+
+        SetEquipped(slot, item);
+        ApplyEquipmentBuff(item);
+        currentHp = Mathf.Min(currentHp, MaxHp);
+        currentMp = Mathf.Min(currentMp, MaxMp);
+        PlayerData.Instance?.SaveFrom(this);
+        SaveManager.Instance?.Save();
+        Inventory.Instance.NotifyChanged();
+        return true;
+    }
+
+    public bool TryUnequipToInventory(EquipmentSlot slot)
+    {
+        EquipmentData equipped = GetEquipped(slot);
+        if (equipped == null || Inventory.Instance == null)
+            return false;
+
+        if (!Inventory.Instance.AddItem(equipped, 1))
+            return false;
+
+        RemoveEquipmentBuffFromItem(equipped);
+        SetEquipped(slot, null);
+        currentHp = Mathf.Min(currentHp, MaxHp);
+        currentMp = Mathf.Min(currentMp, MaxMp);
+        PlayerData.Instance?.SaveFrom(this);
+        SaveManager.Instance?.Save();
+        Inventory.Instance.NotifyChanged();
+        return true;
+    }
+
+    public EquipmentData GetEquipped(EquipmentSlot slot)
+    {
+        return GetEquipment(slot);
+    }
+
     public void UnequipItem(EquipmentSlot slot)
+    {
+        EquipmentData item = GetEquipment(slot);
+        if (item != null)
+            RemoveEquipmentBuffFromItem(item);
+
+        SetEquipped(slot, null);
+        currentHp = Mathf.Min(currentHp, MaxHp);
+        currentMp = Mathf.Min(currentMp, MaxMp);
+    }
+
+    private static EquipmentSlot ResolveEquipSlot(EquipmentData item)
+    {
+        if (item.slotType == EquipmentSlot.Ring1 || item.slotType == EquipmentSlot.Ring2)
+        {
+            if (PlayerStat.Instance != null && PlayerStat.Instance.ringSlot1 == null)
+                return EquipmentSlot.Ring1;
+            if (PlayerStat.Instance != null && PlayerStat.Instance.ringSlot2 == null)
+                return EquipmentSlot.Ring2;
+            return EquipmentSlot.Ring1;
+        }
+
+        return item.slotType;
+    }
+
+    private void SetEquipped(EquipmentSlot slot, EquipmentData item)
     {
         switch (slot)
         {
-            case EquipmentSlot.Weapon:
-                weaponSlot = null;
-                break;
-
-            case EquipmentSlot.SubWeapon:
-                subWeaponSlot = null;
-                break;
-
-            case EquipmentSlot.Helmet:
-                helmetSlot = null;
-                break;
-
-            case EquipmentSlot.Armor:
-                armorSlot = null;
-                break;
-
-            case EquipmentSlot.Pants:
-                pantsSlot = null;
-                break;
-
-            case EquipmentSlot.Gloves:
-                glovesSlot = null;
-                break;
-
-            case EquipmentSlot.Boots:
-                bootsSlot = null;
-                break;
-
-            case EquipmentSlot.Necklace:
-                necklaceSlot = null;
-                break;
-
-            case EquipmentSlot.Ring1:
-                ringSlot1 = null;
-                break;
-
-            case EquipmentSlot.Ring2:
-                ringSlot2 = null;
-                break;
+            case EquipmentSlot.Weapon: weaponSlot = item; break;
+            case EquipmentSlot.SubWeapon: subWeaponSlot = item; break;
+            case EquipmentSlot.Helmet: helmetSlot = item; break;
+            case EquipmentSlot.Armor: armorSlot = item; break;
+            case EquipmentSlot.Pants: pantsSlot = item; break;
+            case EquipmentSlot.Gloves: glovesSlot = item; break;
+            case EquipmentSlot.Boots: bootsSlot = item; break;
+            case EquipmentSlot.Necklace: necklaceSlot = item; break;
+            case EquipmentSlot.Ring1: ringSlot1 = item; break;
+            case EquipmentSlot.Ring2: ringSlot2 = item; break;
         }
-        RemoveEquipmentBuff(slot);
-        currentHp = Mathf.Min(currentHp, MaxHp);
-        currentMp = Mathf.Min(currentMp, MaxMp);
     }
 
     #endregion
@@ -417,7 +507,7 @@ public class PlayerStat : MonoBehaviour
     }
     private void ApplyEquipmentBuff(EquipmentData item)
     {
-        if (item == null)
+        if (item == null || item.buffs == null || BuffManager.Instance == null)
             return;
 
         foreach (BuffBase buff in item.buffs)
@@ -428,11 +518,9 @@ public class PlayerStat : MonoBehaviour
             BuffManager.Instance.AddBuff(buff);
         }
     }
-    private void RemoveEquipmentBuff(EquipmentSlot slot)
+    private void RemoveEquipmentBuffFromItem(EquipmentData item)
     {
-        EquipmentData item = GetEquipment(slot);
-
-        if (item == null)
+        if (item == null || item.buffs == null || BuffManager.Instance == null)
             return;
 
         foreach (BuffBase buff in item.buffs)

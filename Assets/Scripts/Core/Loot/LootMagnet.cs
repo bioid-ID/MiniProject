@@ -1,33 +1,16 @@
 using UnityEngine;
 
+/// <summary>
+/// Legacy helper. Loot magnet pull is handled by <see cref="LootPhysicsBehavior"/> on each loot instance.
+/// Kept for compatibility if attached to the player in a scene.
+/// </summary>
 public class LootMagnet : MonoBehaviour
 {
-    [SerializeField]
-    float radius = 5;
+    [SerializeField] private float radius = 4.5f;
 
-    [SerializeField]
-    float speed = 8;
-
-    private void Update()
+    private void OnDrawGizmosSelected()
     {
-        Collider2D[] cols =
-            Physics2D.OverlapCircleAll(
-                transform.position,
-                radius);
-
-        foreach (var col in cols)
-        {
-            Loot loot =
-                col.GetComponent<Loot>();
-
-            if (loot == null)
-                continue;
-
-            loot.transform.position =
-                Vector3.MoveTowards(
-                    loot.transform.position,
-                    transform.position,
-                    speed * Time.deltaTime);
-        }
+        Gizmos.color = new Color(1f, 0.85f, 0.2f, 0.35f);
+        Gizmos.DrawWireSphere(transform.position, radius);
     }
 }

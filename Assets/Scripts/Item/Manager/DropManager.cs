@@ -51,8 +51,8 @@ public class DropManager : MonoBehaviour
         if (loot == null)
             return;
 
-        Vector2 offset = Random.insideUnitCircle * 0.35f;
-        loot.transform.position = position + (Vector3)offset;
-        loot.Initialize(lootData);
+        Vector2 offset = Random.insideUnitCircle * 0.15f;
+        Vector3 spawnPosition = position + (Vector3)offset;
+        loot.Initialize(lootData, spawnPosition);
     }
 }

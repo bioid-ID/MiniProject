@@ -12,7 +12,7 @@ public static class PortalFactory
 
         SpriteRenderer renderer = portalObject.AddComponent<SpriteRenderer>();
         renderer.sprite = ProceduralSpriteFactory.CreateCircle(data.placeholderColor);
-        renderer.sortingOrder = 1;
+        renderer.sortingOrder = 5;
 
         BoxCollider2D collider = portalObject.AddComponent<BoxCollider2D>();
         collider.isTrigger = true;

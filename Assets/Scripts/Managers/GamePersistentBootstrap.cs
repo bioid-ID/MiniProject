@@ -34,8 +34,14 @@ public class GamePersistentBootstrap : MonoBehaviour
         Ensure<GamePauseController>("GamePauseController");
         Ensure<Inventory>("Inventory");
         Ensure<InventoryUIController>("InventoryUIController");
+        Ensure<StatUIController>("StatUIController");
         Ensure<ConsumableUseController>("ConsumableUseController");
         Ensure<ResultUIController>("ResultUIController");
+        Ensure<SceneTransitionController>("SceneTransitionController");
+        Ensure<MinimapUIController>("MinimapUIController");
+        Ensure<SoundManager>("SoundManager");
+        Ensure<SimpleTweenRunner>("SimpleTweenRunner");
+        UiEventSystemUtility.EnsureExists();
     }
 
     private static void Ensure<T>(string objectName) where T : Component

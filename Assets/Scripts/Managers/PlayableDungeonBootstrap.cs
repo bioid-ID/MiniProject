@@ -24,41 +24,27 @@ public class PlayableDungeonBootstrap : MonoBehaviour
     {
         Time.timeScale = 1f;
         GamePauseController.Instance?.ForceClose();
-
         EnsurePersistentData();
-        PoolManager poolManager = EnsurePoolManager();
-        Transform poolRoot = poolManager.transform;
-
-        Enemy enemyPrefab = CreateEnemyTemplate(poolRoot);
-        Projectile projectilePrefab = CreateProjectileTemplate(poolRoot);
-
-        poolManager.RegisterPool(enemyPrefab, 40, poolRoot);
-        poolManager.RegisterPool(projectilePrefab, 80, poolRoot);
-
-        Loot lootPrefab = CreateLootTemplate(poolRoot);
-        poolManager.RegisterPool(lootPrefab, 30, poolRoot);
-
-        EnsureManager<EnemyManager>("EnemyManager");
-        EnsureManager<DropManager>("DropManager");
-        EnsureManager<BuffManager>("BuffManager");
-        EnsureManager<SkillManager>("SkillManager");
-        EnsureManager<DamagePopupManager>("DamagePopupManager");
-
-        if (FindFirstObjectByType<HUDController>() == null)
-            EnsureManager<HUDController>("HUDController");
-
-        if (DungeonManager.Instance == null)
-            new GameObject("DungeonManager").AddComponent<DungeonManager>();
     }
 
     private void Start()
     {
-        SetupPlayer();
-        SetupSpawner();
-        EnsureReturnPortal();
-        EnsureDungeonCanvas();
-        EnsureDungeonInteractionUI();
-        FixDungeonCamera();
+        DungeonSceneSetupUtility.EnsureGameplay();
+        FixDungeonHudLayout();
+    }
+
+    private static void FixDungeonHudLayout()
+    {
+        Canvas canvas = FindFirstObjectByType<Canvas>();
+        if (canvas == null)
+            return;
+
+        DungeonUiLayoutHelper.Apply(canvas);
+    }
+
+    public static void ConfigureDungeonCombat(GameObject playerObject)
+    {
+        SetupDungeonCombat(playerObject);
     }
 
     private static void EnsureDungeonCanvas()
@@ -75,13 +61,7 @@ public class PlayableDungeonBootstrap : MonoBehaviour
         scaler.referenceResolution = new Vector2(1920f, 1080f);
 
         canvasObject.AddComponent<UnityEngine.UI.GraphicRaycaster>();
-
-        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>() == null)
-        {
-            GameObject eventSystem = new GameObject("EventSystem");
-            eventSystem.AddComponent<UnityEngine.EventSystems.EventSystem>();
-            eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
-        }
+        UiEventSystemUtility.EnsureExists();
 
         canvasObject.AddComponent<HUDController>();
     }
@@ -215,8 +195,12 @@ public class PlayableDungeonBootstrap : MonoBehaviour
         lootObject.transform.SetParent(parent, false);
 
         Rigidbody2D rb = lootObject.AddComponent<Rigidbody2D>();
-        rb.bodyType = RigidbodyType2D.Kinematic;
+        rb.bodyType = RigidbodyType2D.Dynamic;
         rb.gravityScale = 0f;
+        rb.linearDamping = 4f;
+        rb.angularDamping = 1.5f;
+        rb.constraints = RigidbodyConstraints2D.FreezeRotation;
+        rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
 
         CircleCollider2D collider = lootObject.AddComponent<CircleCollider2D>();
         collider.isTrigger = true;
@@ -226,20 +210,8 @@ public class PlayableDungeonBootstrap : MonoBehaviour
         renderer.sprite = CreateCircleSprite(new Color(1f, 0.85f, 0.2f));
         renderer.sortingOrder = 3;
 
+        lootObject.AddComponent<LootPhysicsBehavior>();
         return lootObject.AddComponent<Loot>();
-    }
-
-    private static void SetupPlayer()
-    {
-        GameObject playerObject = PlayerSpawnUtility.EnsurePlayer(PlayerSetupMode.Dungeon, Vector3.zero);
-
-        if (playerObject == null)
-        {
-            Debug.LogError("PlayableDungeonBootstrap: Failed to ensure dungeon player.");
-            return;
-        }
-
-        SetupDungeonCombat(playerObject);
     }
 
     private static void SetupDungeonCombat(GameObject playerObject)
@@ -316,6 +288,7 @@ public class PlayableDungeonBootstrap : MonoBehaviour
         {
             int enemyLayerMask = LayerMask.GetMask("Default");
             SetPrivateField(controller, "enemyLayer", (LayerMask)enemyLayerMask);
+            controller.RefreshCombatSetup();
         }
 
         SetupDefaultSkills(playerObject);
@@ -367,41 +340,6 @@ public class PlayableDungeonBootstrap : MonoBehaviour
         skillManager.AddSkill(existingSkill);
     }
 
-    private static void SetupSpawner()
-    {
-        EnemySpawnerManager spawner = FindFirstObjectByType<EnemySpawnerManager>();
-
-        if (spawner != null)
-            return;
-
-        GameObject spawnerObject = new GameObject("EnemySpawnerManager");
-        spawner = spawnerObject.AddComponent<EnemySpawnerManager>();
-
-        Transform[] spawnPoints = new Transform[4];
-        Vector2[] offsets =
-        {
-            new Vector2(6f, 4f),
-            new Vector2(-6f, 4f),
-            new Vector2(6f, -4f),
-            new Vector2(-6f, -4f)
-        };
-
-        for (int i = 0; i < offsets.Length; i++)
-        {
-            GameObject point = new GameObject($"SpawnPoint_{i + 1}");
-            point.transform.SetParent(spawnerObject.transform, false);
-            point.transform.position = offsets[i];
-            spawnPoints[i] = point.transform;
-        }
-
-        SetPrivateField(spawner, "spawnPoints", spawnPoints);
-        SetPrivateField(spawner, "spawnInterval", 3f);
-        SetPrivateField(spawner, "spawnImmediatelyOnDeath", true);
-        SetPrivateField(spawner, "currentStageLevel", 1);
-
-        spawner.SendMessage("SpawnInitialWave", SendMessageOptions.DontRequireReceiver);
-    }
-
     private static Sprite CreateCircleSprite(Color color)
     {
         const int size = 32;
@@ -426,11 +364,6 @@ public class PlayableDungeonBootstrap : MonoBehaviour
             new Rect(0, 0, size, size),
             new Vector2(0.5f, 0.5f),
             size);
-    }
-
-    private static void EnsureReturnPortal()
-    {
-        PortalSpawner.SpawnDungeonPortals(GameContentProvider.Portals);
     }
 
     private static void EnsureDungeonInteractionUI()

@@ -88,6 +88,9 @@ public static class PlayerSetupUtility
 
         if (playerObject.GetComponent<ProjectileAttack>() == null)
             playerObject.AddComponent<ProjectileAttack>();
+
+        if (playerObject.GetComponent<LootMagnet>() == null)
+            playerObject.AddComponent<LootMagnet>();
     }
 
     private static void ApplyProgress(GameObject playerObject)

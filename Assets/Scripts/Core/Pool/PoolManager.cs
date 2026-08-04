@@ -18,6 +18,12 @@ public class PoolManager : MonoBehaviour
         Instance = this;
     }
 
+    private void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
+
     public void RegisterPool<T>(ObjectPool<T> pool)
         where T : PoolObject
     {
@@ -51,6 +57,11 @@ public class PoolManager : MonoBehaviour
         }
 
         return ((ObjectPool<T>)pool).Get();
+    }
+
+    public bool IsRegistered<T>() where T : PoolObject
+    {
+        return pools.ContainsKey(typeof(T));
     }
 
     public void Return<T>(T obj)

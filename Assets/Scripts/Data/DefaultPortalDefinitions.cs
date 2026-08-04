@@ -3,12 +3,15 @@ using UnityEngine;
 public static class DefaultPortalDefinitions
 {
     private static PortalData mainDungeonPortal;
-    private static PortalData testDungeonPortal;
+    private static PortalData roguelikeDungeonPortal;
     private static PortalData returnHubPortal;
 
     public static PortalData MainDungeon => GetOrCreateMainDungeon();
-    public static PortalData TestDungeon => GetOrCreateTestDungeon();
+    public static PortalData RoguelikeDungeon => GetOrCreateRoguelikeDungeon();
     public static PortalData ReturnHub => GetOrCreateReturnHub();
+
+    // Back-compat
+    public static PortalData TestDungeon => RoguelikeDungeon;
 
     private static PortalData GetOrCreateMainDungeon()
     {
@@ -25,19 +28,19 @@ public static class DefaultPortalDefinitions
         return mainDungeonPortal;
     }
 
-    private static PortalData GetOrCreateTestDungeon()
+    private static PortalData GetOrCreateRoguelikeDungeon()
     {
-        if (testDungeonPortal != null)
-            return testDungeonPortal;
+        if (roguelikeDungeonPortal != null)
+            return roguelikeDungeonPortal;
 
-        testDungeonPortal = ScriptableObject.CreateInstance<PortalData>();
-        testDungeonPortal.portalId = "portal_test_dungeon";
-        testDungeonPortal.displayName = "Test Dungeon";
-        testDungeonPortal.flow = PortalFlow.EnterDungeon;
-        testDungeonPortal.targetSceneName = GameSceneNames.TestDungeon;
-        testDungeonPortal.resetDungeonRun = true;
-        testDungeonPortal.placeholderColor = new Color(0.85f, 0.55f, 0.25f);
-        return testDungeonPortal;
+        roguelikeDungeonPortal = ScriptableObject.CreateInstance<PortalData>();
+        roguelikeDungeonPortal.portalId = "portal_roguelike_dungeon";
+        roguelikeDungeonPortal.displayName = "Roguelike Dungeon";
+        roguelikeDungeonPortal.flow = PortalFlow.EnterDungeon;
+        roguelikeDungeonPortal.targetSceneName = GameSceneNames.RoguelikeDungeon;
+        roguelikeDungeonPortal.resetDungeonRun = true;
+        roguelikeDungeonPortal.placeholderColor = new Color(0.85f, 0.55f, 0.25f);
+        return roguelikeDungeonPortal;
     }
 
     private static PortalData GetOrCreateReturnHub()
@@ -47,7 +50,7 @@ public static class DefaultPortalDefinitions
 
         returnHubPortal = ScriptableObject.CreateInstance<PortalData>();
         returnHubPortal.portalId = "portal_return_hub";
-        returnHubPortal.displayName = "Nexus";
+        returnHubPortal.displayName = "Lobby";
         returnHubPortal.flow = PortalFlow.ReturnToHub;
         returnHubPortal.targetSceneName = GameSceneNames.Hub;
         returnHubPortal.resetDungeonRun = false;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -12,9 +13,11 @@ public class GameStateController : MonoBehaviour
     public bool IsPlaying => State == GameState.Playing;
     public bool IsPaused => State == GameState.Paused;
     public bool IsInventoryOpen { get; private set; }
-    public bool CanControlPlayer => IsPlaying && !IsInventoryOpen;
-    public bool CanWorldInteract => IsPlaying && !IsInventoryOpen;
-    public bool CanCombat => IsPlaying && !IsInventoryOpen && Context == GameContext.Dungeon;
+    public bool IsStatOpen { get; private set; }
+
+    public bool CanControlPlayer => IsPlaying;
+    public bool CanWorldInteract => IsPlaying;
+    public bool CanCombat => IsPlaying && Context == GameContext.Dungeon;
 
     public event Action<GameState> StateChanged;
     public event Action<GameContext> ContextChanged;
@@ -52,23 +55,49 @@ public class GameStateController : MonoBehaviour
         SetContext(ResolveContext(scene.name));
         SetPlaying();
         GameSessionReset.ApplyForScene(scene);
+        UpdateBgmForContext();
+
+        if (GameSceneNames.IsDungeonScene(scene.name))
+            StartCoroutine(RetryDungeonSetupNextFrame());
+    }
+
+    private static IEnumerator RetryDungeonSetupNextFrame()
+    {
+        yield return null;
+        DungeonSceneSetupUtility.EnsureGameplay();
+    }
+
+    private void UpdateBgmForContext()
+    {
+        if (SoundManager.Instance == null)
+            return;
+
+        switch (Context)
+        {
+            case GameContext.Hub:
+                SoundManager.Instance.PlayBgm("Audio/BGM/hub_loop");
+                break;
+            case GameContext.Dungeon:
+                SoundManager.Instance.PlayBgm("Audio/BGM/dungeon_loop");
+                break;
+            default:
+                SoundManager.Instance.StopBgm();
+                break;
+        }
     }
 
     public void SetContext(GameContext newContext)
     {
-        if (Context == newContext)
-            return;
-
         Context = newContext;
         ContextChanged?.Invoke(Context);
+        UpdateCursorVisibility();
     }
 
     public void SetPlaying()
     {
         State = GameState.Playing;
         Time.timeScale = 1f;
-        SetInventoryOpen(false);
-        Cursor.visible = false;
+        UpdateCursorVisibility();
         StateChanged?.Invoke(State);
     }
 
@@ -78,14 +107,34 @@ public class GameStateController : MonoBehaviour
             return;
 
         IsInventoryOpen = open;
-        Cursor.visible = open || IsPaused;
+        UpdateCursorVisibility();
+    }
+
+    public void SetStatOpen(bool open)
+    {
+        if (IsStatOpen == open)
+            return;
+
+        IsStatOpen = open;
+        UpdateCursorVisibility();
+    }
+
+    public void NotifySceneTransitionComplete()
+    {
+        UpdateCursorVisibility();
+    }
+
+    private void UpdateCursorVisibility()
+    {
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
     public void SetPaused()
     {
         State = GameState.Paused;
         Time.timeScale = 0f;
-        Cursor.visible = true;
+        UpdateCursorVisibility();
         StateChanged?.Invoke(State);
     }
 
